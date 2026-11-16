@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}NBA Sub Patterns{% endblock %}</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><circle cx='12' cy='12' r='10' fill='%2358A6FF'/><path d='M2 12h20M12 2v20M4.5 4.5c3 3 3 12 0 15M19.5 4.5c-3 3-3 12 0 15' stroke='%23000' stroke-width='1.25' fill='none'/></svg>" />
+  <link rel="stylesheet" href="{{ base }}/static/css/main.css" />
+  <script src="{{ base }}/static/js/main.js" defer></script>
+</head>
+<body>
+<nav class="navbar">
+  <a href="{{ base }}/" class="nav-logo">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="currentColor"/><path d="M2 12h20M12 2v20M4.5 4.5c3 3 3 12 0 15M19.5 4.5c-3 3-3 12 0 15" stroke="#000" stroke-width="1.25" fill="none"/></svg>
+    <span>NBA Sub Patterns</span>
+  </a>
+  <div class="nav-tabs">
+    <a href="{{ base }}/" class="nav-tab {{ 'active' if active == 'home' }}">Today</a>
+    <a href="{{ base }}/teams/" class="nav-tab {{ 'active' if active == 'teams' }}">Teams</a>
+    <a href="{{ base }}/players/" class="nav-tab {{ 'active' if active == 'players' }}">Players</a>
+    <a href="{{ base }}/about/" class="nav-tab {{ 'active' if active == 'about' }}">How it works</a>
+  </div>
+  <div class="nav-refresh"><span>Updated</span> {{ updated }}</div>
+</nav>
+<main class="page-content">
+{% block content %}{% endblock %}
+</main>
+</body>
+</html>

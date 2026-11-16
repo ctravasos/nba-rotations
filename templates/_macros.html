@@ -1,0 +1,29 @@
+{% macro season_picker(seasons, current, path) -%}
+<div class="pill-group">
+  {% for s in seasons|reverse %}
+  <a class="pill {{ 'active' if s == current }}" href="{{ base }}{{ path }}{{ season_path(s) }}">{{ season_label(s) }}</a>
+  {% endfor %}
+</div>
+{%- endmacro %}
+
+{% macro phase_header(columns, first="Player") -%}
+<tr class="head-quarters">
+  <th></th>
+  {% for q in (1, 2, 3, 4) %}
+  <th colspan="{{ columns|selectattr(0, 'equalto', q)|list|length }}" class="q-start">Q{{ q }}</th>
+  {% endfor %}
+</tr>
+<tr>
+  <th class="sticky-col">{{ first }}</th>
+  {% for q, ph in columns %}
+  <th class="{{ 'q-start' if loop.first or columns[loop.index0 - 1][0] != q }} {{ 'to-col' if ph in ('to1', 'to2') }}">{{ PHASE_LABELS[ph] }}</th>
+  {% endfor %}
+</tr>
+{%- endmacro %}
+
+{% macro rate_cell(rin, rout, first_of_q, is_to) -%}
+<td class="rate-cell {{ 'q-start' if first_of_q }} {{ 'to-col' if is_to }}">
+  {%- if rin >= 0.05 %}<span class="r-in" style="{{ heat(rin, 'in') }}">▲{{ rin|pct }}</span>{% endif -%}
+  {%- if rout >= 0.05 %}<span class="r-out" style="{{ heat(rout, 'out') }}">▼{{ rout|pct }}</span>{% endif -%}
+</td>
+{%- endmacro %}

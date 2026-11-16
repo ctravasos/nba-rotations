@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% from "_macros.html" import phase_header, rate_cell %}
+{% block title %}{{ p.name }} — NBA Sub Patterns{% endblock %}
+{% block content %}
+<div class="page-header">
+  {% if p.headshot %}<img class="headshot" src="{{ p.headshot }}" alt="">{% endif %}
+  <div>
+    <h1>{{ p.name }}</h1>
+    <div class="sub">{{ p.pos }} · {{ p.stints[0].team }}</div>
+  </div>
+</div>
+
+<h2>Check-in / check-out patterns</h2>
+<p class="hint">One row per season and team. ▲ = share of games they checked in during that phase, ▼ = checked out.
+  Q1 Start is omitted (that's the starting lineup — see GS).</p>
+<div class="table-wrap">
+<table class="stat-table rotmap">
+  <thead>{{ phase_header(COLUMNS, "Season") }}</thead>
+  <tbody>
+  {% for s in p.stints %}
+    <tr>
+      <td class="sticky-col player-cell">
+        <a href="{{ base }}/teams/{{ s.team }}/{{ season_path(s.season) }}">{{ season_label(s.season) }} {{ s.team }}</a>
+        <span class="muted">{{ s.gp }} GP · {{ s.gs }} GS · {{ '%.1f'|format(s.mpg) }} MPG</span>
+      </td>
+      {% for q, ph in COLUMNS %}
+        {{ rate_cell(s['in'].get((q, ph), 0), s['out'].get((q, ph), 0), loop.first or COLUMNS[loop.index0 - 1][0] != q, ph in ('to1', 'to2')) }}
+      {% endfor %}
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endblock %}

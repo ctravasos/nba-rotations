@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% from "_macros.html" import season_picker, phase_header, rate_cell %}
+{% block title %}{{ t.name }} {{ season_label(season) }} — NBA Sub Patterns{% endblock %}
+{% block content %}
+<div class="page-header" style="--team-c: {{ t.color or 'var(--surface)' }}">
+  {% if t.logo %}<img class="team-logo" src="{{ t.logo }}" alt="">{% endif %}
+  <div>
+    <h1>{{ t.name }}</h1>
+    <div class="sub">{{ season_label(season) }} regular season · {{ t.games }} games</div>
+  </div>
+  {{ season_picker(seasons, season, '/teams/' ~ t.abbr ~ '/') }}
+</div>
+
+<h2>Timeout subs</h2>
+<p class="hint">Who checks in (▲) and out (▼) at each quarter's 1st and 2nd timeout. % = share of games the player played.
+  <b>L{{ RECENT_GAMES }}</b> = last {{ RECENT_GAMES }} team games. Swap = the player they most often swap with at that timeout.</p>
+<div class="card-grid">
+  {% for c in t.cards %}
+  <div class="to-card">
+    <div class="to-card-head">
+      <span class="to-label">{{ c.label }}</span>
+      <span class="to-meta">median {{ c.median_clock }} · no sub {{ c.no_sub }}/{{ c.n }}</span>
+    </div>
+    <table class="mini">
+      <thead><tr><th></th><th>Player</th><th>Season</th><th>L{{ RECENT_GAMES }}</th><th>Swap</th></tr></thead>
+      <tbody>
+      {% for kind, rows in (('in', c.ins), ('out', c.outs)) %}
+        {% for r in rows if r.rate >= MIN_RATE_SHOWN %}
+        <tr class="{{ 'group-start' if loop.first }}">
+          <td class="dir dir-{{ kind }}">{{ '▲' if kind == 'in' else '▼' }}</td>
+          <td><a href="{{ base }}/players/{{ r.id }}/">{{ short_name(r.name) }}</a></td>
+          <td style="{{ heat(r.rate, kind) }}">{{ r.rate|pct }} <span class="muted">{{ r.n }}/{{ r.gp }}</span></td>
+          <td style="{{ heat(r.recent, kind) }}">{{ r.recent|pct }}</td>
+          <td class="muted">{{ r.swap or '' }}</td>
+        </tr>
+        {% endfor %}
+      {% endfor %}
+      {% if not (c.ins|selectattr('rate', 'ge', MIN_RATE_SHOWN)|list) and not (c.outs|selectattr('rate', 'ge', MIN_RATE_SHOWN)|list) %}
+        <tr><td colspan="5" class="muted">No repeat subs at this timeout</td></tr>
+      {% endif %}
+      </tbody>
+    </table>
+  </div>
+  {% endfor %}
+</div>
+
+<h2>Rotation map</h2>
+<p class="hint">Every sub falls in one phase of the quarter: <b>Start</b> (lineup change between quarters), <b>Pre TO1</b>, <b>TO1</b>, <b>TO1–TO2</b>, <b>TO2</b>, <b>Post TO2</b>. Cells show how often the player checks in ▲ / out ▼ in that phase.</p>
+<div class="pill-group toggle" data-toggle="rotmap">
+  <button class="pill active" data-show="season">Season</button>
+  <button class="pill" data-show="recent">Last {{ RECENT_GAMES }}</button>
+</div>
+{% for window in ('season', 'recent') %}
+<div class="table-wrap" data-panel="rotmap" data-name="{{ window }}" {{ 'hidden' if window != 'season' }}>
+<table class="stat-table rotmap">
+  <thead>{{ phase_header(COLUMNS) }}</thead>
+  <tbody>
+  {% for p in t.players if (p.gp if window == 'season' else p.gp_recent) > 0 %}
+    {% set rin = t.rates[window]['in'].get(p.player_id, {}) %}
+    {% set rout = t.rates[window]['out'].get(p.player_id, {}) %}
+    <tr>
+      <td class="sticky-col player-cell">
+        <a href="{{ base }}/players/{{ p.player_id }}/">{{ p.name }}</a>
+        <span class="muted">{{ p.pos }} · {{ p.gp if window == 'season' else p.gp_recent|int }} GP · {{ p.gs }} GS · {{ '%.1f'|format(p.mpg) }} MPG</span>
+      </td>
+      {% for q, ph in COLUMNS %}
+        {{ rate_cell(rin.get((q, ph), 0), rout.get((q, ph), 0), loop.first or COLUMNS[loop.index0 - 1][0] != q, ph in ('to1', 'to2')) }}
+      {% endfor %}
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endfor %}
+
+<h2>Game log</h2>
+<p class="hint">Net changes at each timeout. Clock = when the timeout happened.</p>
+<div class="table-wrap">
+<table class="stat-table gamelog">
+  <thead>
+    <tr>
+      <th class="sticky-col">Game</th>
+      {% for q, ph in TO_COLUMNS %}<th class="{{ 'q-start' if ph == 'to1' }}">Q{{ q }} {{ PHASE_LABELS[ph] }}</th>{% endfor %}
+    </tr>
+  </thead>
+  <tbody>
+  {% for g in t.log %}
+    <tr>
+      <td class="sticky-col nowrap">{{ g.date[5:] }} {{ 'vs' if g.home else '@' }} <a href="{{ base }}/teams/{{ g.opp }}/{{ season_path(season) }}">{{ g.opp }}</a></td>
+      {% for c in g.cells %}
+      <td class="{{ 'q-start' if loop.index0 is even }} log-cell">
+        {% if c %}
+          <span class="clock">{{ c.clock }}</span>
+          {% for n in c.ins %}<span class="r-in-text">+{{ n }}</span>{% endfor %}
+          {% for n in c.outs %}<span class="r-out-text">−{{ n }}</span>{% endfor %}
+          {% if not c.ins %}<span class="muted">—</span>{% endif %}
+        {% else %}<span class="muted">n/a</span>{% endif %}
+      </td>
+      {% endfor %}
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endblock %}

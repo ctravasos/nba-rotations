@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}How it works — NBA Sub Patterns{% endblock %}
+{% block content %}
+<div class="page-header"><div><h1>How it works</h1></div></div>
+<div class="prose">
+  <h2>TO1 and TO2</h2>
+  <p>Every NBA quarter has two mandatory TV timeouts. If neither team has called a timeout by 6:59, the officials
+    take one at the next dead ball; same again at 2:59 for the second. A team-called timeout before those marks
+    <i>counts as</i> the mandatory one, so the TV breaks often come earlier than 7:00 / 3:00 — especially after Q1.</p>
+  <p>That makes <b>TO1</b> and <b>TO2</b> simply the first and second timeouts of each quarter, whenever they happen.
+    In 2026-27 data, 99% of quarters have both, and the first comes before the 6:00 mark 97% of the time.</p>
+
+  <h2>Phases</h2>
+  <p>Only about a quarter of mid-quarter subs happen at TO1/TO2 themselves — many come at free throws and other dead
+    balls. So every quarter is split into six phases and every sub lands in exactly one:</p>
+  <p><b>Start</b> (lineup change between quarters) → <b>Pre TO1</b> → <b>TO1</b> → <b>TO1–TO2</b> → <b>TO2</b> → <b>Post TO2</b></p>
+
+  <h2>Rates</h2>
+  <p>A rate is the share of the player's games (with that team, that season) where they checked in ▲ or out ▼
+    during that phase. Subs within one stoppage are netted: if A comes in for B and C then comes in for A, that
+    reads as C in for B. Regular season only; overtime excluded.</p>
+
+  <h2>Data</h2>
+  <p>ESPN play-by-play via the <a href="https://github.com/sportsdataverse/sportsdataverse-data">sportsdataverse</a>
+    daily releases. Current season plus the prior five.</p>
+</div>
+{% endblock %}

@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% from "_macros.html" import season_picker %}
+{% block title %}Players {{ season_label(season) }} — NBA Sub Patterns{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Players</h1>
+    <div class="sub">{{ season_label(season) }} regular season · timeout check-in / check-out rates</div>
+  </div>
+  {{ season_picker(seasons, season, '/players/') }}
+</div>
+
+<div class="filters">
+  <input type="search" class="filter-input" data-filter-table="players" placeholder="Filter by player or team…">
+  <div class="pill-group toggle" data-toggle="pdir">
+    <button class="pill active" data-show="in">Checks in ▲</button>
+    <button class="pill" data-show="out">Checks out ▼</button>
+  </div>
+  <label class="muted"><input type="checkbox" data-min-gp="players" checked> 5+ GP</label>
+</div>
+<p class="hint">Click a column to sort. % = share of the player's games where they checked in (or out) at that timeout.</p>
+
+{% for kind in ('ins', 'outs') %}
+<div class="table-wrap" data-panel="pdir" data-name="{{ kind[:-1] }}" {{ 'hidden' if kind == 'outs' }}>
+<table class="stat-table sortable" data-table="players">
+  <thead>
+    <tr>
+      <th class="sticky-col" data-sort="text">Player</th>
+      <th data-sort="text">Team</th>
+      <th data-sort="num">GP</th>
+      <th data-sort="num">GS</th>
+      <th data-sort="num">MPG</th>
+      {% for q, ph in TO_COLUMNS %}<th data-sort="num" class="{{ 'q-start' if ph == 'to1' }}">Q{{ q }} {{ PHASE_LABELS[ph] }}</th>{% endfor %}
+    </tr>
+  </thead>
+  <tbody>
+  {% for p in players %}
+    <tr data-gp="{{ p.gp }}">
+      <td class="sticky-col"><a href="{{ base }}/players/{{ p.id }}/">{{ p.name }}</a></td>
+      <td><a href="{{ base }}/teams/{{ p.team }}/{{ season_path(season) }}">{{ p.team }}</a></td>
+      <td>{{ p.gp }}</td>
+      <td>{{ p.gs }}</td>
+      <td>{{ '%.1f'|format(p.mpg) }}</td>
+      {% for r in p[kind] %}
+      <td data-v="{{ r }}" class="{{ 'q-start' if loop.index0 is even }}" style="{{ heat(r, kind[:-1]) }}">{{ r|pct }}</td>
+      {% endfor %}
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endfor %}
+{% endblock %}

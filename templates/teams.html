@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Teams — NBA Sub Patterns{% endblock %}
+{% block content %}
+<div class="page-header"><div><h1>Teams</h1><div class="sub">{{ season_label(CURRENT_SEASON) }}</div></div></div>
+<div class="team-grid">
+  {% for t in teams %}
+  <a class="team-tile" href="{{ base }}/teams/{{ t.abbr }}/" style="--team-c: #{{ t.team_color or '292F39' }}">
+    {% if t.team_logo %}<img src="{{ t.team_logo }}" alt="">{% endif %}
+    <span>{{ t.team_display_name }}</span>
+  </a>
+  {% endfor %}
+</div>
+{% endblock %}
