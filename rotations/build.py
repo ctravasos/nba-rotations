@@ -20,7 +20,7 @@ env.filters["pct"] = lambda x: f"{x * 100:.0f}%" if x else ""
 env.globals.update(
     # URL prefix when hosted in a subfolder, e.g. "/nba-rotations" on GitHub Pages
     base=os.environ.get("SITE_BASE", "").rstrip("/"),
-    COLUMNS=stats.COLUMNS, SLOTS=stats.SLOTS, column_label=stats.column_label,
+    COLUMNS=stats.COLUMNS, SLOTS=stats.SLOTS, column_label=stats.column_label, ordinal=stats.ordinal,
     CURRENT_SEASON=CURRENT_SEASON, RECENT_GAMES=RECENT_GAMES, MIN_RATE_SHOWN=MIN_RATE_SHOWN,
     MIN_MPG=MIN_MPG,
     season_label=season_label, short_name=stats.short_name,

@@ -151,3 +151,5 @@ a.game-card:hover { text-decoration: none; border-color: var(--accent); }
 .matchup-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: start; }
 @media (max-width: 700px) { .matchup-header { grid-template-columns: 1fr; } }
 .mini th.num, .mini td.num { text-align: right; }
+.stat-table th.wrap { white-space: normal; min-width: 64px; line-height: 1.2; }
+.th-top { display: block; font-size: var(--fs-xs); font-weight: 500; color: var(--text-secondary); }

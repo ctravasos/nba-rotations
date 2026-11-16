@@ -8,8 +8,9 @@ from .config import RECENT_GAMES, SEASONS
 from .data import PROCESSED, REGULAR_SEASON
 
 PHASES = ["start", "pre1", "to1", "mid", "to2", "post"]
-PHASE_LABELS = {"start": "Start", "pre1": "Pre TO1", "to1": "TO1", "mid": "TO1–TO2",
-                "to2": "TO2", "post": "Post TO2", "after1": "After TO1"}
+PHASE_LABELS = {"start": "Start", "pre1": "Before Timeout 1", "to1": "Timeout 1",
+                "mid": "Between Timeouts", "to2": "Timeout 2", "post": "After Timeout 2",
+                "after1": "After Timeout 1"}
 Q4_AFTER_TO1 = ("mid", "to2", "post")  # 4Q TO2 isn't tracked: everything after 4Q TO1 is one phase
 
 # Rotation map columns. 1Q start is just the starters; 4Q collapses after TO1.
@@ -24,15 +25,28 @@ def column_label(period: int, phase: str) -> str:
     return PHASE_LABELS[phase]
 
 
+def ordinal(n: int) -> str:
+    return {1: "1st", 2: "2nd", 3: "3rd"}.get(n, f"{n}th")
+
+
+def quarter_label(period: int, phase: str) -> str:
+    """Top line of a slot: "1st Quarter", or "1st/2nd Quarter" for a break."""
+    if phase == "start":
+        return f"{ordinal(period - 1)}/{ordinal(period)} Quarter"
+    return f"{ordinal(period)} Quarter"
+
+
 def slot_label(period: int, phase: str) -> str:
     if phase == "start":
-        return f"{period - 1}Q/{period}Q Break"
-    return f"{period}Q {PHASE_LABELS[phase]}"
+        return f"{quarter_label(period, phase)} Break"
+    return f"{quarter_label(period, phase)} – {PHASE_LABELS[phase]}"
 
 
 # The sub windows tracked on cards, the Players table and game logs, in game order.
 # The 1Q/2Q and 3Q/4Q breaks are logged as the start of 2Q / 4Q.
-SLOTS = [{"period": q, "phase": p, "label": slot_label(q, p), "is_break": p == "start"}
+SLOTS = [{"period": q, "phase": p, "label": slot_label(q, p), "is_break": p == "start",
+          # two-line form for narrow table headers
+          "top": quarter_label(q, p), "bottom": "Break" if p == "start" else PHASE_LABELS[p]}
          for q, p in [(1, "to1"), (1, "to2"), (2, "start"), (2, "to1"), (2, "to2"),
                       (3, "to1"), (3, "to2"), (4, "start"), (4, "to1")]]
 SLOT_KEYS = [(s["period"], s["phase"]) for s in SLOTS]

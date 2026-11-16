@@ -13,7 +13,7 @@
 
 {% set show_recent = season == CURRENT_SEASON %}
 <h2>Timeout & quarter-break subs</h2>
-<p class="hint">Who checks in (▲) and out (▼) at each quarter's 1st and 2nd timeout and at the 1Q/2Q and 3Q/4Q breaks.
+<p class="hint">Who checks in (▲) and out (▼) at each quarter's 1st and 2nd timeout and at the 1st/2nd and 3rd/4th quarter breaks.
   % = share of games the player played.{% if show_recent %} <b>L{{ RECENT_GAMES }}</b> = last {{ RECENT_GAMES }} team games; only players at {{ MIN_RATE_SHOWN|pct }}+ over the L{{ RECENT_GAMES }} are listed.{% else %} Only players at {{ MIN_RATE_SHOWN|pct }}+ are listed.{% endif %}
   <b>2/3</b> = share of made field goals that are 2s / 3s.</p>
 <div class="card-grid">
@@ -23,7 +23,7 @@
 </div>
 
 <h2>Rotation map</h2>
-<p class="hint">Every sub falls in one phase of the quarter: <b>Break</b> / <b>Halftime</b> (lineup change before the quarter), <b>Pre TO1</b>, <b>TO1</b>, <b>TO1–TO2</b>, <b>TO2</b>, <b>Post TO2</b>; in 4Q everything after TO1 is grouped. Cells show how often the player checks in ▲ / out ▼ in that phase. Highlighted columns are the tracked timeouts and breaks.</p>
+<p class="hint">Every sub falls in one phase of the quarter: <b>Break</b> / <b>Halftime</b> (lineup change before the quarter), <b>Before Timeout 1</b>, <b>Timeout 1</b>, <b>Between Timeouts</b>, <b>Timeout 2</b>, <b>After Timeout 2</b>; in the 4th quarter everything after Timeout 1 is grouped. Cells show how often the player checks in ▲ / out ▼ in that phase. Highlighted columns are the tracked timeouts and breaks.</p>
 {% if show_recent %}
 <div class="pill-group toggle" data-toggle="rotmap">
   <button class="pill active" data-show="season">Season</button>
@@ -60,7 +60,7 @@
   <thead>
     <tr>
       <th class="sticky-col">Game</th>
-      {% for s in SLOTS %}<th class="{{ 'q-start' if loop.first or SLOTS[loop.index0 - 1].period != s.period }}">{{ s.label }}</th>{% endfor %}
+      {% for s in SLOTS %}<th class="{{ 'q-start' if loop.first or SLOTS[loop.index0 - 1].period != s.period }}"><span class="th-top">{{ s.top }}</span>{{ s.bottom }}</th>{% endfor %}
     </tr>
   </thead>
   <tbody>
