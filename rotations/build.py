@@ -7,7 +7,7 @@ import requests
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from . import stats
-from .config import CURRENT_SEASON, MIN_RATE_SHOWN, RECENT_GAMES, season_label
+from .config import CURRENT_SEASON, MIN_MPG, MIN_RATE_SHOWN, RECENT_GAMES, season_label
 from .data import ROOT
 
 SITE = ROOT / "site"
@@ -22,6 +22,7 @@ env.globals.update(
     base=os.environ.get("SITE_BASE", "").rstrip("/"),
     COLUMNS=stats.COLUMNS, SLOTS=stats.SLOTS, column_label=stats.column_label,
     CURRENT_SEASON=CURRENT_SEASON, RECENT_GAMES=RECENT_GAMES, MIN_RATE_SHOWN=MIN_RATE_SHOWN,
+    MIN_MPG=MIN_MPG,
     season_label=season_label, short_name=stats.short_name,
     is_slot=lambda period, phase: (period, phase) in stats.SLOT_KEYS,
 )
@@ -62,6 +63,7 @@ def todays_games() -> list[dict]:
         comp = e["competitions"][0]
         teams = {c["homeAway"]: c for c in comp["competitors"]}
         games.append({
+            "id": e["id"],
             "status": e["status"]["type"]["shortDetail"],
             "started": e["status"]["type"]["state"] != "pre",
             **{side: {"abbr": stats.ABBR.get(t["team"]["abbreviation"], t["team"]["abbreviation"]),
@@ -70,19 +72,6 @@ def todays_games() -> list[dict]:
                for side, t in teams.items()},
         })
     return games
-
-
-def leaders(players: list[dict], min_gp: int = 5, limit: int = 40) -> list[dict]:
-    """Most repeatable timeout / quarter-break subs this season."""
-    rows = []
-    for p in players:
-        if p["gp"] < min_gp:
-            continue
-        for i, slot in enumerate(stats.SLOTS):
-            for kind in ("ins", "outs"):
-                if p[kind][i] >= 0.5:
-                    rows.append({**p, "slot": slot["label"], "kind": kind[:-1], "rate": p[kind][i]})
-    return sorted(rows, key=lambda r: (-r["rate"], -r["gp"]))[:limit]
 
 
 def build() -> None:
@@ -97,7 +86,12 @@ def build() -> None:
     team_list = sorted(teams.to_dict("records"), key=lambda t: t["team_display_name"])
 
     players_now = stats.all_players(CURRENT_SEASON)
-    write("", "index.html", games=todays_games(), leaders=leaders(players_now), active="home", **common)
+    games = [g for g in todays_games() if {g["away"]["abbr"], g["home"]["abbr"]} <= set(teams.abbr)]
+    write("", "index.html", games=games, active="home", **common)
+    for g in games:
+        write(f"games/{g['id']}", "game.html", g=g, active="home",
+              away=stats.team_season(CURRENT_SEASON, g["away"]["abbr"]),
+              home=stats.team_season(CURRENT_SEASON, g["home"]["abbr"]), **common)
     write("teams", "teams.html", teams=team_list, active="teams", **common)
     write("about", "about.html", active="about", **common)
 
@@ -109,9 +103,9 @@ def build() -> None:
             write(f"teams/{abbr}/{season_path(season)}", "team.html", season=season,
                   t=stats.team_season(season, abbr), active="teams", **common)
         roster = players_now if season == CURRENT_SEASON else stats.all_players(season)
-        player_ids.update(p["id"] for p in roster)
-        write(f"players/{season_path(season)}", "players.html", season=season, players=roster,
-              active="players", **common)
+        player_ids.update(p["id"] for p in roster)  # every player keeps a page (team pages link to them)
+        write(f"players/{season_path(season)}", "players.html", season=season,
+              players=[p for p in roster if p["mpg"] > MIN_MPG], active="players", **common)
 
     for pid in sorted(player_ids):
         if (h := stats.player_history(pid)) is not None:

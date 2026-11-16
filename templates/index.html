@@ -3,51 +3,27 @@
 <div class="page-header">
   <div>
     <h1>Today</h1>
-    <div class="sub">{{ season_label(CURRENT_SEASON) }} · tap a team for its sub patterns</div>
+    <div class="sub">{{ season_label(CURRENT_SEASON) }} · tap a game for both teams' timeout & quarter-break subs side by side</div>
   </div>
 </div>
 
 {% if games %}
 <div class="game-strip">
   {% for g in games %}
-  <div class="game-card">
+  <a class="game-card" href="{{ base }}/games/{{ g.id }}/">
     <div class="game-status">{{ g.status }}</div>
     {% for side in ('away', 'home') %}
-    <a class="game-team" href="{{ base }}/teams/{{ g[side].abbr }}/">
+    <div class="game-team">
       {% if g[side].logo %}<img src="{{ g[side].logo }}" alt="">{% endif %}
       <span class="abbr">{{ g[side].abbr }}</span>
       <span class="muted">{{ g[side].record or '' }}</span>
       <span class="score">{{ g[side].score if g.started else '' }}</span>
-    </a>
+    </div>
     {% endfor %}
-  </div>
+  </a>
   {% endfor %}
 </div>
 {% else %}
 <p class="muted">No games today.</p>
 {% endif %}
-
-<h2>Most repeatable subs</h2>
-<p class="hint">Player + timeout / quarter-break combos that happen in at least half of the player's games this season (5+ GP).</p>
-<div class="table-wrap">
-<table class="stat-table sortable">
-  <thead><tr>
-    <th data-sort="text">Player</th><th data-sort="text">Team</th><th data-sort="text">When</th>
-    <th data-sort="text">Move</th><th data-sort="num">Rate</th><th data-sort="num">GP</th><th data-sort="num">MPG</th>
-  </tr></thead>
-  <tbody>
-  {% for r in leaders %}
-    <tr>
-      <td><a href="{{ base }}/players/{{ r.id }}/">{{ r.name }}</a></td>
-      <td><a href="{{ base }}/teams/{{ r.team }}/">{{ r.team }}</a></td>
-      <td>{{ r.slot }}</td>
-      <td class="dir-{{ r.kind }}">{{ '▲ checks in' if r.kind == 'in' else '▼ checks out' }}</td>
-      <td data-v="{{ r.rate }}" style="{{ heat(r.rate, r.kind) }}">{{ r.rate|pct }}</td>
-      <td>{{ r.gp }}</td>
-      <td>{{ '%.1f'|format(r.mpg) }}</td>
-    </tr>
-  {% endfor %}
-  </tbody>
-</table>
-</div>
 {% endblock %}

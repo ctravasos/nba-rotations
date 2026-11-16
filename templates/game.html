@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% from "_macros.html" import slot_card %}
+{% block title %}{{ away.abbr }} @ {{ home.abbr }} — NBA Sub Patterns{% endblock %}
+{% block content %}
+<div class="page-header matchup-header">
+  {% for side, t in (('away', away), ('home', home)) %}
+  <a class="matchup-team matchup-{{ side }}" href="{{ base }}/teams/{{ t.abbr }}/" style="--team-c: {{ t.color or 'var(--surface)' }}">
+    {% if t.logo %}<img class="team-logo" src="{{ t.logo }}" alt="">{% endif %}
+    <div>
+      <h1>{{ t.name }}</h1>
+      <div class="sub">{{ g[side].record or '' }} · {{ 'Away' if side == 'away' else 'Home' }}{% if g.started %} · {{ g[side].score }}{% endif %}</div>
+    </div>
+  </a>
+  {% if side == 'away' %}<div class="matchup-at"><span>@</span><span class="muted">{{ g.status }}</span></div>{% endif %}
+  {% endfor %}
+</div>
+<p class="hint">{{ season_label(CURRENT_SEASON) }} season rates for each team at every timeout and quarter break.
+  % = share of games the player played. <b>L{{ RECENT_GAMES }}</b> = last {{ RECENT_GAMES }} team games.</p>
+
+{% for i in range(SLOTS|length) %}
+<div class="matchup-slot {{ 'break-row' if SLOTS[i].is_break }}">{{ SLOTS[i].label }}</div>
+<div class="matchup-row">
+  {{ slot_card(away.cards[i], true, away.abbr) }}
+  {{ slot_card(home.cards[i], true, home.abbr) }}
+</div>
+{% endfor %}
+{% endblock %}

@@ -27,3 +27,30 @@
   {%- if rout >= 0.05 %}<span class="r-out" style="{{ heat(rout, 'out') }}">▼{{ rout|pct }}</span>{% endif -%}
 </td>
 {%- endmacro %}
+
+{% macro slot_card(c, show_recent, label=None) -%}
+<div class="to-card {{ 'break-card' if c.is_break }}">
+  <div class="to-card-head">
+    <span class="to-label">{{ label or c.label }}</span>
+    <span class="to-meta">{% if c.median_clock %}median {{ c.median_clock }} · {% endif %}no sub {{ c.no_sub }}/{{ c.n }}</span>
+  </div>
+  <table class="mini">
+    <thead><tr><th></th><th>Player</th><th>Season</th>{% if show_recent %}<th>L{{ RECENT_GAMES }}</th>{% endif %}</tr></thead>
+    <tbody>
+    {% for kind, rows in (('in', c.ins), ('out', c.outs)) %}
+      {% for r in rows if r.rate >= MIN_RATE_SHOWN %}
+      <tr class="{{ 'group-start' if loop.first }}">
+        <td class="dir dir-{{ kind }}">{{ '▲' if kind == 'in' else '▼' }}</td>
+        <td><a href="{{ base }}/players/{{ r.id }}/">{{ r.name }}</a></td>
+        <td style="{{ heat(r.rate, kind) }}">{{ r.rate|pct }} <span class="muted">{{ r.n }}/{{ r.gp }}</span></td>
+        {% if show_recent %}<td style="{{ heat(r.recent, kind) }}">{{ r.recent|pct }}</td>{% endif %}
+      </tr>
+      {% endfor %}
+    {% endfor %}
+    {% if not (c.ins|selectattr('rate', 'ge', MIN_RATE_SHOWN)|list) and not (c.outs|selectattr('rate', 'ge', MIN_RATE_SHOWN)|list) %}
+      <tr><td colspan="4" class="muted">No repeat subs here</td></tr>
+    {% endif %}
+    </tbody>
+  </table>
+</div>
+{%- endmacro %}

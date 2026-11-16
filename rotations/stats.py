@@ -81,6 +81,7 @@ def _rates(events: pd.DataFrame, gp: pd.Series, key: str) -> dict:
             for pid, cols in out.items() if pid in gp.index}
 
 
+@lru_cache(maxsize=None)  # team pages and game pages share these
 def team_season(season: int, abbr: str) -> dict:
     slots, players, teams = load(season)
     ev = slots[slots.team == abbr]
