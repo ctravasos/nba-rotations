@@ -20,9 +20,10 @@ env.filters["pct"] = lambda x: f"{x * 100:.0f}%" if x else ""
 env.globals.update(
     # URL prefix when hosted in a subfolder, e.g. "/nba-rotations" on GitHub Pages
     base=os.environ.get("SITE_BASE", "").rstrip("/"),
-    PHASE_LABELS=stats.PHASE_LABELS, COLUMNS=stats.COLUMNS, TO_COLUMNS=stats.TO_COLUMNS,
+    COLUMNS=stats.COLUMNS, SLOTS=stats.SLOTS, column_label=stats.column_label,
     CURRENT_SEASON=CURRENT_SEASON, RECENT_GAMES=RECENT_GAMES, MIN_RATE_SHOWN=MIN_RATE_SHOWN,
     season_label=season_label, short_name=stats.short_name,
+    is_slot=lambda period, phase: (period, phase) in stats.SLOT_KEYS,
 )
 
 
@@ -72,16 +73,15 @@ def todays_games() -> list[dict]:
 
 
 def leaders(players: list[dict], min_gp: int = 5, limit: int = 40) -> list[dict]:
-    """Most repeatable timeout subs this season."""
+    """Most repeatable timeout / quarter-break subs this season."""
     rows = []
     for p in players:
         if p["gp"] < min_gp:
             continue
-        for i, (period, phase) in enumerate(stats.TO_COLUMNS):
+        for i, slot in enumerate(stats.SLOTS):
             for kind in ("ins", "outs"):
                 if p[kind][i] >= 0.5:
-                    rows.append({**p, "slot": f"Q{period} {stats.PHASE_LABELS[phase]}",
-                                 "kind": kind[:-1], "rate": p[kind][i]})
+                    rows.append({**p, "slot": slot["label"], "kind": kind[:-1], "rate": p[kind][i]})
     return sorted(rows, key=lambda r: (-r["rate"], -r["gp"]))[:limit]
 
 

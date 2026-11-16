@@ -9,10 +9,33 @@ from .data import PROCESSED, REGULAR_SEASON
 
 PHASES = ["start", "pre1", "to1", "mid", "to2", "post"]
 PHASE_LABELS = {"start": "Start", "pre1": "Pre TO1", "to1": "TO1", "mid": "TO1–TO2",
-                "to2": "TO2", "post": "Post TO2"}
-# (period, phase) columns, skipping Q1 start (that's just the starters)
-COLUMNS = [(q, p) for q in (1, 2, 3, 4) for p in PHASES if not (q == 1 and p == "start")]
-TO_COLUMNS = [(q, p) for q in (1, 2, 3, 4) for p in ("to1", "to2")]
+                "to2": "TO2", "post": "Post TO2", "after1": "After TO1"}
+Q4_AFTER_TO1 = ("mid", "to2", "post")  # 4Q TO2 isn't tracked: everything after 4Q TO1 is one phase
+
+# Rotation map columns. 1Q start is just the starters; 4Q collapses after TO1.
+COLUMNS = ([(1, p) for p in PHASES[1:]]
+           + [(q, p) for q in (2, 3) for p in PHASES]
+           + [(4, "start"), (4, "pre1"), (4, "to1"), (4, "after1")])
+
+
+def column_label(period: int, phase: str) -> str:
+    if phase == "start":
+        return "Halftime" if period == 3 else "Break"
+    return PHASE_LABELS[phase]
+
+
+def slot_label(period: int, phase: str) -> str:
+    if phase == "start":
+        return f"{period - 1}Q/{period}Q Break"
+    return f"{period}Q {PHASE_LABELS[phase]}"
+
+
+# The sub windows tracked on cards, the Players table and game logs, in game order.
+# The 1Q/2Q and 3Q/4Q breaks are logged as the start of 2Q / 4Q.
+SLOTS = [{"period": q, "phase": p, "label": slot_label(q, p), "is_break": p == "start"}
+         for q, p in [(1, "to1"), (1, "to2"), (2, "start"), (2, "to1"), (2, "to2"),
+                      (3, "to1"), (3, "to2"), (4, "start"), (4, "to1")]]
+SLOT_KEYS = [(s["period"], s["phase"]) for s in SLOTS]
 
 # ESPN -> standard NBA abbreviations
 ABBR = {"GS": "GSW", "NY": "NYK", "SA": "SAS", "NO": "NOP", "UTAH": "UTA", "WSH": "WAS"}
@@ -39,6 +62,7 @@ def load(season: int) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
             df[c] = df[c].replace(ABBR)
     teams["abbr"] = teams.team_abbreviation.replace(ABBR)
     teams = teams[teams.abbr.isin(slots.team)]
+    slots.loc[(slots.period == 4) & slots.phase.isin(Q4_AFTER_TO1), "phase"] = "after1"
     return slots, players, teams
 
 
@@ -47,12 +71,14 @@ def available_seasons() -> list[int]:
 
 
 def _rates(events: pd.DataFrame, gp: pd.Series, key: str) -> dict:
-    """{player: {(period, phase): count}} for players listed in events[key]."""
-    out: dict[str, Counter] = {}
-    for period, phase, ids in zip(events.period, events.phase, events[key]):
+    """{player: {(period, phase): share of games}} for players listed in events[key].
+    Counts games, not events: a merged phase (4Q After TO1) can hold several rows per game."""
+    out: dict[str, dict[tuple, set]] = {}
+    for gid, period, phase, ids in zip(events.game_id, events.period, events.phase, events[key]):
         for pid in ids:
-            out.setdefault(pid, Counter())[(period, phase)] += 1
-    return {pid: {col: c[col] / gp[pid] for col in c} for pid, c in out.items() if pid in gp.index}
+            out.setdefault(pid, {}).setdefault((period, phase), set()).add(gid)
+    return {pid: {col: len(g) / gp[pid] for col, g in cols.items()}
+            for pid, cols in out.items() if pid in gp.index}
 
 
 def team_season(season: int, abbr: str) -> dict:
@@ -75,54 +101,51 @@ def team_season(season: int, abbr: str) -> dict:
                    "out": _rates(ev[ev.game_id.isin(recent_ids)], info.gp_recent[info.gp_recent > 0], "outs")},
     }
     names = info.name.to_dict()
+    # Short names ("S. Curry") unless two teammates share one (Stephen and Seth Curry)
+    shorts = Counter(short_name(n) for n in names.values())
+    display = {pid: short_name(n) if shorts[short_name(n)] == 1 else n for pid, n in names.items()}
 
-    # Timeout cards: who comes in / goes out at each TO1/TO2, and who they usually swap with
+    # Slot cards: who comes in / goes out at each timeout and quarter break
     cards = []
-    for period, phase in TO_COLUMNS:
-        tos = ev[(ev.period == period) & (ev.phase == phase)]
-        partner: dict[str, Counter] = {}
-        for pairs in tos.pairs:
-            for p_in, p_out in pairs:
-                partner.setdefault(p_in, Counter())[p_out] += 1
-                partner.setdefault(p_out, Counter())[p_in] += 1
+    for slot in SLOTS:
+        period, phase = slot["period"], slot["phase"]
+        rows = ev[(ev.period == period) & (ev.phase == phase)]
+        # Every timeout gets a row even with no subs; breaks only have rows when someone subbed
+        n = len(game_ids) if slot["is_break"] else len(rows)
 
         def top(key):
+            season_rates = rates["season"]["in" if key == "ins" else "out"]
             recent_rates = rates["recent"]["in" if key == "ins" else "out"]
-            counts = Counter(p for ids in tos[key] for p in ids)
-            rows = []
-            for pid, n in counts.most_common():
-                if pid not in info.index:
-                    continue
-                swap = partner.get(pid, Counter()).most_common(1)
-                rows.append({"id": pid, "name": names[pid], "n": n, "gp": int(info.gp[pid]),
-                             "rate": n / info.gp[pid],
-                             "recent": recent_rates.get(pid, {}).get((period, phase), 0),
-                             "swap": short_name(names[swap[0][0]]) if swap and swap[0][0] in names else None,
-                             "swap_n": swap[0][1] if swap else 0})
-            return sorted(rows, key=lambda r: -r["rate"])
+            counts = Counter(p for ids in rows[key] for p in ids)
+            out = [{"id": pid, "name": display[pid], "n": c, "gp": int(info.gp[pid]),
+                    "rate": season_rates[pid][(period, phase)],
+                    "recent": recent_rates.get(pid, {}).get((period, phase), 0)}
+                   for pid, c in counts.items() if pid in info.index]
+            return sorted(out, key=lambda r: -r["rate"])
 
-        clocks = tos.clock.dropna().map(_clock_secs)
+        clocks = rows.clock.dropna().map(_clock_secs)
         cards.append({
-            "period": period, "phase": phase, "label": f"Q{period} {PHASE_LABELS[phase]}",
-            "n": len(tos), "no_sub": int((tos.ins.str.len() == 0).sum()),
-            "own": int((tos.called_by == "own").sum()),
-            "median_clock": _fmt_clock(clocks.median()) if len(clocks) else "–",
+            **slot, "n": n, "no_sub": n - int((rows.ins.str.len() > 0).sum()),
+            "median_clock": _fmt_clock(clocks.median()) if len(clocks) else None,
             "ins": top("ins"), "outs": top("outs"),
         })
 
-    # Game log: TO1/TO2 changes for every game, newest first
+    # Game log: changes at each slot for every game, newest first
     log = []
     by_game = ev.set_index(["game_id", "period", "phase"])
     for gid in reversed(game_ids):
         g = ev[ev.game_id == gid].iloc[0]
         cells = []
-        for period, phase in TO_COLUMNS:
-            if (gid, period, phase) in by_game.index:
-                r = by_game.loc[(gid, period, phase)]
-                cells.append({"clock": r.clock,
-                              "ins": [short_name(names.get(p, "?")) for p in r.ins],
-                              "outs": [short_name(names.get(p, "?")) for p in r.outs]})
-            else:
+        for slot in SLOTS:
+            key = (gid, slot["period"], slot["phase"])
+            if key in by_game.index:
+                r = by_game.loc[key]
+                cells.append({"clock": r.clock if pd.notna(r.clock) else None,  # breaks have no clock
+                              "ins": [display.get(p, "?") for p in r.ins],
+                              "outs": [display.get(p, "?") for p in r.outs]})
+            elif slot["is_break"]:  # the break always happens; nobody subbed
+                cells.append({"clock": None, "ins": [], "outs": []})
+            else:  # quarter had fewer than two timeouts
                 cells.append(None)
         log.append({"date": g.game_date, "opp": g.opp, "home": bool(g.home), "cells": cells})
 
@@ -145,7 +168,7 @@ def _fmt_clock(secs: float) -> str:
 
 
 def all_players(season: int) -> list[dict]:
-    """One row per player-team with in-rates at each TO slot (for the Players table)."""
+    """One row per player-team with in/out rates at each slot (for the Players table)."""
     slots, players, _ = load(season)
     rows = []
     for abbr, roster in players.groupby("team"):
@@ -157,8 +180,8 @@ def all_players(season: int) -> list[dict]:
         for pid, r in info.iterrows():
             rows.append({"id": pid, "name": r["name"], "team": abbr, "gp": int(gp[pid]),
                          "gs": int(r.gs), "mpg": r.mpg,
-                         "ins": [ins.get(pid, {}).get(c, 0) for c in TO_COLUMNS],
-                         "outs": [outs.get(pid, {}).get(c, 0) for c in TO_COLUMNS]})
+                         "ins": [ins.get(pid, {}).get(c, 0) for c in SLOT_KEYS],
+                         "outs": [outs.get(pid, {}).get(c, 0) for c in SLOT_KEYS]})
     return sorted(rows, key=lambda r: -r["mpg"] * r["gp"])
 
 

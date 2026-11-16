@@ -5,7 +5,7 @@
 <div class="page-header">
   <div>
     <h1>Players</h1>
-    <div class="sub">{{ season_label(season) }} regular season · timeout check-in / check-out rates</div>
+    <div class="sub">{{ season_label(season) }} regular season · check-in / check-out rates at timeouts and quarter breaks</div>
   </div>
   {{ season_picker(seasons, season, '/players/') }}
 </div>
@@ -18,7 +18,7 @@
   </div>
   <label class="muted"><input type="checkbox" data-min-gp="players" checked> 5+ GP</label>
 </div>
-<p class="hint">Click a column to sort. % = share of the player's games where they checked in (or out) at that timeout.</p>
+<p class="hint">Click a column to sort. % = share of the player's games where they checked in (or out) at that timeout or quarter break.</p>
 
 {% for kind in ('ins', 'outs') %}
 <div class="table-wrap" data-panel="pdir" data-name="{{ kind[:-1] }}" {{ 'hidden' if kind == 'outs' }}>
@@ -30,7 +30,7 @@
       <th data-sort="num">GP</th>
       <th data-sort="num">GS</th>
       <th data-sort="num">MPG</th>
-      {% for q, ph in TO_COLUMNS %}<th data-sort="num" class="{{ 'q-start' if ph == 'to1' }}">Q{{ q }} {{ PHASE_LABELS[ph] }}</th>{% endfor %}
+      {% for s in SLOTS %}<th data-sort="num" class="{{ 'q-start' if loop.first or SLOTS[loop.index0 - 1].period != s.period }}">{{ s.label }}</th>{% endfor %}
     </tr>
   </thead>
   <tbody>
@@ -42,7 +42,7 @@
       <td>{{ p.gs }}</td>
       <td>{{ '%.1f'|format(p.mpg) }}</td>
       {% for r in p[kind] %}
-      <td data-v="{{ r }}" class="{{ 'q-start' if loop.index0 is even }}" style="{{ heat(r, kind[:-1]) }}">{{ r|pct }}</td>
+      <td data-v="{{ r }}" class="{{ 'q-start' if loop.first or SLOTS[loop.index0 - 1].period != SLOTS[loop.index0].period }}" style="{{ heat(r, kind[:-1]) }}">{{ r|pct }}</td>
       {% endfor %}
     </tr>
   {% endfor %}

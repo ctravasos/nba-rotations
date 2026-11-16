@@ -133,3 +133,4 @@ td.to-col { background: rgba(88, 166, 255, .05); }
   .nav-refresh, .nav-logo span { display: none; }
   .page-content { padding: 12px; }
 }
+.break-card { border-color: color-mix(in srgb, var(--accent) 40%, var(--surface-2)); }

@@ -12,7 +12,7 @@
 
 <h2>Check-in / check-out patterns</h2>
 <p class="hint">One row per season and team. ▲ = share of games they checked in during that phase, ▼ = checked out.
-  Q1 Start is omitted (that's the starting lineup — see GS).</p>
+  Highlighted columns are the tracked timeouts and quarter breaks. 1Q start is omitted (that's the starting lineup — see GS); in 4Q everything after TO1 is grouped.</p>
 <div class="table-wrap">
 <table class="stat-table rotmap">
   <thead>{{ phase_header(COLUMNS, "Season") }}</thead>
@@ -24,7 +24,7 @@
         <span class="muted">{{ s.gp }} GP · {{ s.gs }} GS · {{ '%.1f'|format(s.mpg) }} MPG</span>
       </td>
       {% for q, ph in COLUMNS %}
-        {{ rate_cell(s['in'].get((q, ph), 0), s['out'].get((q, ph), 0), loop.first or COLUMNS[loop.index0 - 1][0] != q, ph in ('to1', 'to2')) }}
+        {{ rate_cell(s['in'].get((q, ph), 0), s['out'].get((q, ph), 0), loop.first or COLUMNS[loop.index0 - 1][0] != q, is_slot(q, ph)) }}
       {% endfor %}
     </tr>
   {% endfor %}

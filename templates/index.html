@@ -3,7 +3,7 @@
 <div class="page-header">
   <div>
     <h1>Today</h1>
-    <div class="sub">{{ season_label(CURRENT_SEASON) }} · tap a team for its timeout sub patterns</div>
+    <div class="sub">{{ season_label(CURRENT_SEASON) }} · tap a team for its sub patterns</div>
   </div>
 </div>
 
@@ -27,12 +27,12 @@
 <p class="muted">No games today.</p>
 {% endif %}
 
-<h2>Most repeatable timeout subs</h2>
-<p class="hint">Player/timeout combos that happen in at least half of the player's games this season (5+ GP).</p>
+<h2>Most repeatable subs</h2>
+<p class="hint">Player + timeout / quarter-break combos that happen in at least half of the player's games this season (5+ GP).</p>
 <div class="table-wrap">
 <table class="stat-table sortable">
   <thead><tr>
-    <th data-sort="text">Player</th><th data-sort="text">Team</th><th data-sort="text">Timeout</th>
+    <th data-sort="text">Player</th><th data-sort="text">Team</th><th data-sort="text">When</th>
     <th data-sort="text">Move</th><th data-sort="num">Rate</th><th data-sort="num">GP</th><th data-sort="num">MPG</th>
   </tr></thead>
   <tbody>

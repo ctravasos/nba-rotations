@@ -10,13 +10,13 @@
 <tr class="head-quarters">
   <th></th>
   {% for q in (1, 2, 3, 4) %}
-  <th colspan="{{ columns|selectattr(0, 'equalto', q)|list|length }}" class="q-start">Q{{ q }}</th>
+  <th colspan="{{ columns|selectattr(0, 'equalto', q)|list|length }}" class="q-start">{{ q }}Q</th>
   {% endfor %}
 </tr>
 <tr>
   <th class="sticky-col">{{ first }}</th>
   {% for q, ph in columns %}
-  <th class="{{ 'q-start' if loop.first or columns[loop.index0 - 1][0] != q }} {{ 'to-col' if ph in ('to1', 'to2') }}">{{ PHASE_LABELS[ph] }}</th>
+  <th class="{{ 'q-start' if loop.first or columns[loop.index0 - 1][0] != q }} {{ 'to-col' if is_slot(q, ph) }}">{{ column_label(q, ph) }}</th>
   {% endfor %}
 </tr>
 {%- endmacro %}
