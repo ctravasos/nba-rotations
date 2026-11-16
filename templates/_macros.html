@@ -35,7 +35,7 @@
     <span class="to-meta">{% if c.median_clock %}median {{ c.median_clock }} · {% endif %}no sub {{ c.no_sub }}/{{ c.n }}</span>
   </div>
   <table class="mini">
-    <thead><tr><th></th><th>Player</th><th>Season</th>{% if show_recent %}<th>L{{ RECENT_GAMES }}</th>{% endif %}<th class="num">PPG</th><th class="num">2/3</th></tr></thead>
+    <thead><tr><th></th><th>Player</th><th>Season</th>{% if show_recent %}<th>L{{ RECENT_GAMES }}</th>{% endif %}<th class="num">PPG</th><th class="num">2%/3%</th></tr></thead>
     <tbody>
     {% set key = 'recent' if show_recent else 'rate' %}
     {% set ns = namespace(any=false) %}

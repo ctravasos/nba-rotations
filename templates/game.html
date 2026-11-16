@@ -16,7 +16,7 @@
 </div>
 <p class="hint">{{ season_label(CURRENT_SEASON) }} season rates for each team at every timeout and quarter break.
   % = share of games the player played. <b>L{{ RECENT_GAMES }}</b> = last {{ RECENT_GAMES }} team games; only players at {{ MIN_RATE_SHOWN|pct }}+ over the L{{ RECENT_GAMES }} are listed.
-  <b>2/3</b> = share of made field goals that are 2s / 3s.</p>
+  <b>2%/3%</b> = share of made field goals that are 2s / 3s.</p>
 
 {% for i in range(SLOTS|length) %}
 <div class="matchup-slot {{ 'break-row' if SLOTS[i].is_break }}">{{ SLOTS[i].label }}</div>
