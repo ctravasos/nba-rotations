@@ -35,20 +35,25 @@
     <span class="to-meta">{% if c.median_clock %}median {{ c.median_clock }} · {% endif %}no sub {{ c.no_sub }}/{{ c.n }}</span>
   </div>
   <table class="mini">
-    <thead><tr><th></th><th>Player</th><th>Season</th>{% if show_recent %}<th>L{{ RECENT_GAMES }}</th>{% endif %}</tr></thead>
+    <thead><tr><th></th><th>Player</th><th>Season</th>{% if show_recent %}<th>L{{ RECENT_GAMES }}</th>{% endif %}<th class="num">PPG</th><th class="num">2/3</th></tr></thead>
     <tbody>
+    {% set key = 'recent' if show_recent else 'rate' %}
+    {% set ns = namespace(any=false) %}
     {% for kind, rows in (('in', c.ins), ('out', c.outs)) %}
-      {% for r in rows if r.rate >= MIN_RATE_SHOWN %}
+      {% for r in rows|selectattr(key, 'ge', MIN_RATE_SHOWN)|sort(attribute=key, reverse=true) %}
+      {% set ns.any = true %}
       <tr class="{{ 'group-start' if loop.first }}">
         <td class="dir dir-{{ kind }}">{{ '▲' if kind == 'in' else '▼' }}</td>
         <td><a href="{{ base }}/players/{{ r.id }}/">{{ r.name }}</a></td>
         <td style="{{ heat(r.rate, kind) }}">{{ r.rate|pct }} <span class="muted">{{ r.n }}/{{ r.gp }}</span></td>
         {% if show_recent %}<td style="{{ heat(r.recent, kind) }}">{{ r.recent|pct }}</td>{% endif %}
+        <td class="num">{{ '%.1f'|format(r.ppg) }}</td>
+        <td class="num muted">{{ r.two_three or '–' }}</td>
       </tr>
       {% endfor %}
     {% endfor %}
-    {% if not (c.ins|selectattr('rate', 'ge', MIN_RATE_SHOWN)|list) and not (c.outs|selectattr('rate', 'ge', MIN_RATE_SHOWN)|list) %}
-      <tr><td colspan="4" class="muted">No repeat subs here</td></tr>
+    {% if not ns.any %}
+      <tr><td colspan="6" class="muted">Nothing at {{ MIN_RATE_SHOWN|pct }}+ {{ 'over the L' ~ RECENT_GAMES if show_recent else 'this season' }}</td></tr>
     {% endif %}
     </tbody>
   </table>

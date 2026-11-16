@@ -178,6 +178,9 @@ def extract_season(season: int) -> None:
         "team": box.team_abbreviation,
         "starter": box.starter.fillna(False).astype(bool),
         "minutes": pd.to_numeric(box.minutes, errors="coerce").fillna(0),
+        "points": pd.to_numeric(box.points, errors="coerce").fillna(0),
+        "fgm": pd.to_numeric(box.field_goals_made, errors="coerce").fillna(0),
+        "fg3m": pd.to_numeric(box.three_point_field_goals_made, errors="coerce").fillna(0),
     })
     players = players[players.minutes > 0]
     players.to_parquet(PROCESSED / f"players_{season}.parquet", index=False)

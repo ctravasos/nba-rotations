@@ -14,7 +14,8 @@
 {% set show_recent = season == CURRENT_SEASON %}
 <h2>Timeout & quarter-break subs</h2>
 <p class="hint">Who checks in (▲) and out (▼) at each quarter's 1st and 2nd timeout and at the 1Q/2Q and 3Q/4Q breaks.
-  % = share of games the player played.{% if show_recent %} <b>L{{ RECENT_GAMES }}</b> = last {{ RECENT_GAMES }} team games.{% endif %}</p>
+  % = share of games the player played.{% if show_recent %} <b>L{{ RECENT_GAMES }}</b> = last {{ RECENT_GAMES }} team games; only players at {{ MIN_RATE_SHOWN|pct }}+ over the L{{ RECENT_GAMES }} are listed.{% else %} Only players at {{ MIN_RATE_SHOWN|pct }}+ are listed.{% endif %}
+  <b>2/3</b> = share of made field goals that are 2s / 3s.</p>
 <div class="card-grid">
   {% for c in t.cards %}
   {{ slot_card(c, show_recent) }}

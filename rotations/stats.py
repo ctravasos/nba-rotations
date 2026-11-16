@@ -41,6 +41,14 @@ SLOT_KEYS = [(s["period"], s["phase"]) for s in SLOTS]
 ABBR = {"GS": "GSW", "NY": "NYK", "SA": "SAS", "NO": "NOP", "UTAH": "UTA", "WSH": "WAS"}
 
 
+def two_three(fgm: float, fg3m: float) -> str | None:
+    """Share of made field goals that are 2s vs 3s, e.g. "65/35"."""
+    if not fgm:
+        return None
+    threes = round(100 * fg3m / fgm)
+    return f"{100 - threes}/{threes}"
+
+
 def short_name(name: str) -> str:
     first, _, rest = name.partition(" ")
     return f"{first[0]}. {rest}" if rest else name
@@ -91,7 +99,9 @@ def team_season(season: int, abbr: str) -> dict:
 
     info = roster.groupby("player_id").agg(
         name=("name", "first"), pos=("pos", "first"), headshot=("headshot", "first"),
-        gp=("game_id", "nunique"), gs=("starter", "sum"), mpg=("minutes", "mean"))
+        gp=("game_id", "nunique"), gs=("starter", "sum"), mpg=("minutes", "mean"),
+        ppg=("points", "mean"), fgm=("fgm", "sum"), fg3m=("fg3m", "sum"))
+    info["two_three"] = [two_three(a, b) for a, b in zip(info.fgm, info.fg3m)]
     recent = roster[roster.game_id.isin(recent_ids)]
     info["gp_recent"] = recent.groupby("player_id").game_id.nunique().reindex(info.index).fillna(0)
     info = info.sort_values(["gs", "mpg"], ascending=False)
@@ -119,6 +129,7 @@ def team_season(season: int, abbr: str) -> dict:
             recent_rates = rates["recent"]["in" if key == "ins" else "out"]
             counts = Counter(p for ids in rows[key] for p in ids)
             out = [{"id": pid, "name": display[pid], "n": c, "gp": int(info.gp[pid]),
+                    "ppg": info.ppg[pid], "two_three": info.two_three[pid],
                     "rate": season_rates[pid][(period, phase)],
                     "recent": recent_rates.get(pid, {}).get((period, phase), 0)}
                    for pid, c in counts.items() if pid in info.index]
@@ -177,10 +188,12 @@ def all_players(season: int) -> list[dict]:
         gp = roster.groupby("player_id").game_id.nunique()
         ins, outs = _rates(ev, gp, "ins"), _rates(ev, gp, "outs")
         info = roster.groupby("player_id").agg(name=("name", "first"), gs=("starter", "sum"),
-                                               mpg=("minutes", "mean"))
+                                               mpg=("minutes", "mean"), ppg=("points", "mean"),
+                                               fgm=("fgm", "sum"), fg3m=("fg3m", "sum"))
         for pid, r in info.iterrows():
             rows.append({"id": pid, "name": r["name"], "team": abbr, "gp": int(gp[pid]),
-                         "gs": int(r.gs), "mpg": r.mpg,
+                         "gs": int(r.gs), "mpg": r.mpg, "ppg": r.ppg,
+                         "two_three": two_three(r.fgm, r.fg3m),
                          "ins": [ins.get(pid, {}).get(c, 0) for c in SLOT_KEYS],
                          "outs": [outs.get(pid, {}).get(c, 0) for c in SLOT_KEYS]})
     return sorted(rows, key=lambda r: -r["mpg"] * r["gp"])
