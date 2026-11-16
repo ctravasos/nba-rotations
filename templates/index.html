@@ -13,13 +13,16 @@
   <a class="game-card" href="{{ base }}/games/{{ g.id }}/">
     <div class="game-status">{{ g.status }}</div>
     {% for side in ('away', 'home') %}
-    <div class="game-team">
+    <div class="game-team" style="--team-c: {{ g[side].color or 'var(--surface-2)' }}">
       {% if g[side].logo %}<img src="{{ g[side].logo }}" alt="">{% endif %}
-      <span class="abbr">{{ g[side].abbr }}</span>
-      <span class="muted">{{ g[side].record or '' }}</span>
+      <div class="game-team-name">
+        <span class="full">{{ g[side].short }}</span>
+        <span class="muted">{{ g[side].abbr }} · {{ g[side].record or '' }}</span>
+      </div>
       <span class="score">{{ g[side].score if g.started else '' }}</span>
     </div>
     {% endfor %}
+    <div class="game-cta">View timeout & break subs →</div>
   </a>
   {% endfor %}
 </div>

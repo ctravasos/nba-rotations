@@ -103,21 +103,8 @@ td.to-col { background: rgba(88, 166, 255, .05); }
 .to-card-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
 .to-label { font-weight: 700; color: var(--accent); }
 .to-meta { font-size: var(--fs-xs); color: var(--text-secondary); }
-.mini { width: 100%; border-collapse: collapse; font-size: var(--fs-sm); font-variant-numeric: tabular-nums; }
-.mini th { color: var(--text-secondary); font-weight: 500; font-size: var(--fs-xs); text-align: left; padding: 2px 4px; }
-.mini td { padding: 3px 4px; }
-.mini td:nth-child(3), .mini td:nth-child(4) { border-radius: 3px; white-space: nowrap; }
-.mini tr.group-start td { border-top: 1px solid var(--surface-2); }
-.mini .dir { width: 14px; }
 
 /* Home */
-.game-strip { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
-.game-card { background: var(--surface); border-radius: var(--radius); padding: 8px 10px; border: 1px solid var(--surface-2); }
-.game-status { font-size: var(--fs-xs); color: var(--text-secondary); margin-bottom: 4px; }
-.game-team { display: flex; align-items: center; gap: 8px; padding: 3px 0; color: var(--text); }
-.game-team img { width: 22px; height: 22px; }
-.game-team .abbr { font-weight: 700; width: 40px; }
-.game-team .score { margin-left: auto; font-weight: 700; }
 
 .team-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
 .team-tile { display: flex; align-items: center; gap: 10px; padding: 12px; border-radius: var(--radius); color: var(--text);
@@ -136,8 +123,6 @@ td.to-col { background: rgba(88, 166, 255, .05); }
 .break-card { border-color: color-mix(in srgb, var(--accent) 40%, var(--surface-2)); }
 
 /* Game page: away left, home right, one row per slot */
-a.game-card { display: block; color: var(--text); }
-a.game-card:hover { text-decoration: none; border-color: var(--accent); }
 .matchup-header { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; }
 .matchup-team { display: flex; align-items: center; gap: 12px; color: var(--text); padding: 8px; border-radius: var(--radius);
   background: linear-gradient(90deg, color-mix(in srgb, var(--team-c) 45%, var(--surface)), var(--surface)); }
@@ -150,6 +135,41 @@ a.game-card:hover { text-decoration: none; border-color: var(--accent); }
 .matchup-slot.break-row { color: var(--text); background: color-mix(in srgb, var(--accent) 18%, transparent); border-radius: var(--radius); padding: 4px; }
 .matchup-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: start; }
 @media (max-width: 700px) { .matchup-header { grid-template-columns: 1fr; } }
-.mini th.num, .mini td.num { text-align: right; }
 .stat-table th.wrap { white-space: normal; min-width: 64px; line-height: 1.2; }
 .th-top { display: block; font-size: var(--fs-xs); font-weight: 500; color: var(--text-secondary); }
+
+/* Slot cards: fixed columns so Season and L10 are the same width; values bolder than headers */
+.mini { width: 100%; border-collapse: collapse; table-layout: fixed; font-variant-numeric: tabular-nums; }
+.mini col.c-dir { width: 18px; }
+.mini col.c-rate { width: 72px; }
+.mini col.c-ppg { width: 46px; }
+.mini col.c-split { width: 58px; }
+.mini th { color: var(--text-secondary); font-weight: 500; font-size: var(--fs-xs); text-transform: uppercase;
+  letter-spacing: .04em; text-align: left; padding: 2px 6px; }
+.mini td { padding: 5px 6px; font-size: 13px; font-weight: 700; border-bottom: 1px solid rgba(255,255,255,.04); }
+.mini td.name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mini th.rate, .mini td.rate { text-align: center; }
+.mini td.rate { white-space: nowrap; border-radius: 3px; }
+.mini th.num, .mini td.num { text-align: right; }
+.mini .frac { font-size: var(--fs-xs); font-weight: 500; color: rgba(232,234,237,.7); margin-left: 4px; }
+.mini tbody tr:nth-child(even) td { background-color: rgba(255,255,255,.035); }
+.mini tbody tr:hover td { background-color: var(--surface-hover); }
+.mini tbody tr:hover td.name a { text-decoration: underline; }
+.mini tr.group-start td { border-top: 1px solid var(--border); }
+.mini .dir { font-size: var(--fs-sm); }
+
+/* Today: large game cards filling the page */
+.game-strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 16px; }
+a.game-card { display: flex; flex-direction: column; gap: 10px; padding: 18px 20px; color: var(--text);
+  background: var(--surface); border: 1px solid var(--surface-2); border-radius: 8px; }
+a.game-card:hover { text-decoration: none; border-color: var(--accent); transform: translateY(-1px); }
+.game-status { font-size: var(--fs-base); font-weight: 600; color: var(--accent); }
+.game-team { display: flex; align-items: center; gap: 14px; padding: 10px 12px; border-radius: var(--radius);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--team-c) 35%, var(--surface)), var(--surface)); }
+.game-team img { width: 52px; height: 52px; }
+.game-team-name { display: flex; flex-direction: column; }
+.game-team-name .full { font-size: 20px; font-weight: 700; }
+.game-team .score { margin-left: auto; font-size: 24px; font-weight: 700; }
+.game-cta { font-size: var(--fs-sm); color: var(--text-secondary); text-align: right; }
+a.game-card:hover .game-cta { color: var(--accent); }
+.mini td.muted { font-weight: 400; font-size: var(--fs-sm); color: var(--text-secondary); }

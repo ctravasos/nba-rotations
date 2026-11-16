@@ -35,7 +35,8 @@
     <span class="to-meta">{% if c.median_clock %}median {{ c.median_clock }} · {% endif %}no sub {{ c.no_sub }}/{{ c.n }}</span>
   </div>
   <table class="mini">
-    <thead><tr><th></th><th>Player</th><th>Season</th>{% if show_recent %}<th>L{{ RECENT_GAMES }}</th>{% endif %}<th class="num">PPG</th><th class="num">2%/3%</th></tr></thead>
+    <colgroup><col class="c-dir"><col><col class="c-rate">{% if show_recent %}<col class="c-rate">{% endif %}<col class="c-ppg"><col class="c-split"></colgroup>
+    <thead><tr><th></th><th>Player</th><th class="rate">Season</th>{% if show_recent %}<th class="rate">L{{ RECENT_GAMES }}</th>{% endif %}<th class="num">PPG</th><th class="num">2%/3%</th></tr></thead>
     <tbody>
     {% set key = 'recent' if show_recent else 'rate' %}
     {% set ns = namespace(any=false) %}
@@ -44,11 +45,11 @@
       {% set ns.any = true %}
       <tr class="{{ 'group-start' if loop.first }}">
         <td class="dir dir-{{ kind }}">{{ '▲' if kind == 'in' else '▼' }}</td>
-        <td><a href="{{ base }}/players/{{ r.id }}/">{{ r.name }}</a></td>
-        <td style="{{ heat(r.rate, kind) }}">{{ r.rate|pct }} <span class="muted">{{ r.n }}/{{ r.gp }}</span></td>
-        {% if show_recent %}<td style="{{ heat(r.recent, kind) }}">{{ r.recent|pct }}</td>{% endif %}
+        <td class="name"><a href="{{ base }}/players/{{ r.id }}/">{{ r.name }}</a></td>
+        <td class="rate" style="{{ heat(r.rate, kind) }}">{{ r.rate|pct }}<span class="frac">{{ r.n }}/{{ r.gp }}</span></td>
+        {% if show_recent %}<td class="rate" style="{{ heat(r.recent, kind) }}">{{ r.recent|pct }}</td>{% endif %}
         <td class="num">{{ '%.1f'|format(r.ppg) }}</td>
-        <td class="num muted">{{ r.two_three or '–' }}</td>
+        <td class="num">{{ r.two_three or '–' }}</td>
       </tr>
       {% endfor %}
     {% endfor %}

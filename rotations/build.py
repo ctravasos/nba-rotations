@@ -68,6 +68,8 @@ def todays_games() -> list[dict]:
             "started": e["status"]["type"]["state"] != "pre",
             **{side: {"abbr": stats.ABBR.get(t["team"]["abbreviation"], t["team"]["abbreviation"]),
                       "name": t["team"]["displayName"], "logo": t["team"].get("logo"),
+                      "short": t["team"].get("shortDisplayName") or t["team"]["displayName"],
+                      "color": f"#{t['team']['color']}" if t["team"].get("color") else None,
                       "score": t.get("score"), "record": (t.get("records") or [{}])[0].get("summary")}
                for side, t in teams.items()},
         })
