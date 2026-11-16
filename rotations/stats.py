@@ -4,7 +4,7 @@ from functools import lru_cache
 
 import pandas as pd
 
-from .config import RECENT_GAMES, SEASONS
+from .config import CURRENT_SEASON, RECENT_GAMES, SEASONS
 from .data import PROCESSED, REGULAR_SEASON
 
 PHASES = ["start", "pre1", "to1", "mid", "to2", "post"]
@@ -106,12 +106,25 @@ def _rates(events: pd.DataFrame, gp: pd.Series, key: str, only: dict[str, set] |
             for pid, cols in out.items() if pid in gp.index}
 
 
+def _team_game_order(ev: pd.DataFrame) -> list:
+    return sorted(ev.game_id.unique(), key=lambda g: ev.loc[ev.game_id == g, "game_date"].iloc[0])
+
+
+def _active(season: int, roster: pd.DataFrame, game_ids: list) -> set:
+    """Players to list. Current season: only those who played in one of the team's last 10
+    games (drops injured, traded and out-of-rotation players). Past seasons: everyone."""
+    if season != CURRENT_SEASON:
+        return set(roster.player_id)
+    return set(roster.loc[roster.game_id.isin(game_ids[-RECENT_GAMES:]), "player_id"])
+
+
 @lru_cache(maxsize=None)  # team pages and game pages share these
 def team_season(season: int, abbr: str) -> dict:
     slots, players, teams = load(season)
     ev = slots[slots.team == abbr]
     roster = players[players.team == abbr]
-    game_ids = sorted(ev.game_id.unique(), key=lambda g: ev.loc[ev.game_id == g, "game_date"].iloc[0])
+    game_ids = _team_game_order(ev)
+    active = _active(season, roster, game_ids)
     # L10 = each player's own last 10 games played, skipping games they missed
     order = {gid: i for i, gid in enumerate(game_ids)}
     last_played = (roster.assign(order=roster.game_id.map(order)).sort_values("order")
@@ -151,7 +164,7 @@ def team_season(season: int, abbr: str) -> dict:
                     "ppg": info.ppg[pid], "two_three": info.two_three[pid],
                     "rate": season_rates[pid][(period, phase)],
                     "recent": recent_rates.get(pid, {}).get((period, phase), 0)}
-                   for pid, c in counts.items() if pid in info.index]
+                   for pid, c in counts.items() if pid in active]
             return sorted(out, key=lambda r: -r["rate"])
 
         clocks = rows.clock.dropna().map(_clock_secs)
@@ -183,7 +196,8 @@ def team_season(season: int, abbr: str) -> dict:
     t = teams[teams.abbr == abbr].iloc[0]
     return {"abbr": abbr, "name": t.team_display_name, "logo": t.team_logo,
             "color": f"#{t.team_color}" if t.team_color else None,
-            "games": len(game_ids), "players": info.reset_index().to_dict("records"),
+            "games": len(game_ids),
+            "players": info[info.index.isin(active)].reset_index().to_dict("records"),
             "rates": rates, "cards": cards, "log": log}
 
 
@@ -204,6 +218,8 @@ def all_players(season: int) -> list[dict]:
     rows = []
     for abbr, roster in players.groupby("team"):
         ev = slots[slots.team == abbr]
+        active = _active(season, roster, _team_game_order(ev))
+        roster = roster[roster.player_id.isin(active)]
         gp = roster.groupby("player_id").game_id.nunique()
         ins, outs = _rates(ev, gp, "ins"), _rates(ev, gp, "outs")
         info = roster.groupby("player_id").agg(name=("name", "first"), gs=("starter", "sum"),
