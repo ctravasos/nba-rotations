@@ -92,12 +92,15 @@ def available_seasons() -> list[int]:
     return [s for s in SEASONS if (PROCESSED / f"slots_{s}.parquet").exists()]
 
 
-def _rates(events: pd.DataFrame, gp: pd.Series, key: str) -> dict:
+def _rates(events: pd.DataFrame, gp: pd.Series, key: str, only: dict[str, set] | None = None) -> dict:
     """{player: {(period, phase): share of games}} for players listed in events[key].
-    Counts games, not events: a merged phase (4Q After TO1) can hold several rows per game."""
+    Counts games, not events: a merged phase (4Q After TO1) can hold several rows per game.
+    `only` limits each player to their own set of games (e.g. their last 10 played)."""
     out: dict[str, dict[tuple, set]] = {}
     for gid, period, phase, ids in zip(events.game_id, events.period, events.phase, events[key]):
         for pid in ids:
+            if only is not None and gid not in only.get(pid, ()):
+                continue
             out.setdefault(pid, {}).setdefault((period, phase), set()).add(gid)
     return {pid: {col: len(g) / gp[pid] for col, g in cols.items()}
             for pid, cols in out.items() if pid in gp.index}
@@ -109,21 +112,23 @@ def team_season(season: int, abbr: str) -> dict:
     ev = slots[slots.team == abbr]
     roster = players[players.team == abbr]
     game_ids = sorted(ev.game_id.unique(), key=lambda g: ev.loc[ev.game_id == g, "game_date"].iloc[0])
-    recent_ids = set(game_ids[-RECENT_GAMES:])
+    # L10 = each player's own last 10 games played, skipping games they missed
+    order = {gid: i for i, gid in enumerate(game_ids)}
+    last_played = (roster.assign(order=roster.game_id.map(order)).sort_values("order")
+                   .groupby("player_id").game_id.agg(lambda g: set(g.iloc[-RECENT_GAMES:])).to_dict())
 
     info = roster.groupby("player_id").agg(
         name=("name", "first"), pos=("pos", "first"), headshot=("headshot", "first"),
         gp=("game_id", "nunique"), gs=("starter", "sum"), mpg=("minutes", "mean"),
         ppg=("points", "mean"), fgm=("fgm", "sum"), fg3m=("fg3m", "sum"))
     info["two_three"] = [two_three(a, b) for a, b in zip(info.fgm, info.fg3m)]
-    recent = roster[roster.game_id.isin(recent_ids)]
-    info["gp_recent"] = recent.groupby("player_id").game_id.nunique().reindex(info.index).fillna(0)
+    info["gp_recent"] = pd.Series({pid: len(g) for pid, g in last_played.items()}).reindex(info.index)
     info = info.sort_values(["gs", "mpg"], ascending=False)
 
     rates = {
         "season": {"in": _rates(ev, info.gp, "ins"), "out": _rates(ev, info.gp, "outs")},
-        "recent": {"in": _rates(ev[ev.game_id.isin(recent_ids)], info.gp_recent[info.gp_recent > 0], "ins"),
-                   "out": _rates(ev[ev.game_id.isin(recent_ids)], info.gp_recent[info.gp_recent > 0], "outs")},
+        "recent": {"in": _rates(ev, info.gp_recent, "ins", only=last_played),
+                   "out": _rates(ev, info.gp_recent, "outs", only=last_played)},
     }
     names = info.name.to_dict()
     # Short names ("S. Curry") unless two teammates share one (Stephen and Seth Curry)
