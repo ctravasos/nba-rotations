@@ -15,7 +15,7 @@
 <h2>Timeout & quarter-break subs</h2>
 <p class="hint">Who checks in (▲) and out (▼) at each quarter's 1st and 2nd timeout and at the 1st/2nd and 3rd/4th quarter breaks.
   % = share of games the player played.{% if show_recent %} <b>L{{ RECENT_GAMES }}</b> = each player's last {{ RECENT_GAMES }} games played (games they missed are skipped); only players at {{ MIN_RATE_SHOWN|pct }}+ over the L{{ RECENT_GAMES }} are listed. Players who haven't played in any of the team's last {{ RECENT_GAMES }} games are hidden.{% else %} Only players at {{ MIN_RATE_SHOWN|pct }}+ are listed.{% endif %}
-  <b>2%/3%</b> = share of made field goals that are 2s / 3s.</p>
+  Timeouts include subs within 1:00 of game clock before/after; breaks only the break itself. <b>2%/3%</b> = share of made field goals that are 2s / 3s.</p>
 <div class="card-grid">
   {% for c in t.cards %}
   {{ slot_card(c, show_recent) }}

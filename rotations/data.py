@@ -15,7 +15,7 @@ from pathlib import Path
 import pandas as pd
 import requests
 
-from .config import CURRENT_SEASON, SEASONS
+from .config import CURRENT_SEASON, SEASONS, TO_WINDOW_SECS
 
 ROOT = Path(__file__).resolve().parent.parent
 RAW = ROOT / "data" / "raw"
@@ -70,13 +70,14 @@ QUARTER_START = 720.0
 
 def phase_of(secs: float, to1: float, to2: float) -> str:
     """Place a stoppage (seconds left in quarter) relative to that quarter's TO1/TO2.
+    Subs within TO_WINDOW_SECS of game clock of a timeout count as that timeout (nearest one
+    if both are close). Quarter-break subs (12:00) always stay "start".
     to1/to2 are NaN when the quarter had fewer timeouts (comparisons are then False)."""
     if secs == QUARTER_START:
         return "start"
-    if secs == to1:
-        return "to1"
-    if secs == to2:
-        return "to2"
+    d1, d2 = abs(secs - to1), abs(secs - to2)
+    if d1 <= TO_WINDOW_SECS or d2 <= TO_WINDOW_SECS:
+        return "to2" if d2 < d1 else "to1"
     if secs < to2:
         return "post"
     if secs < to1:
@@ -114,16 +115,19 @@ def extract_season(season: int) -> None:
     subs["athlete_id_2"] = subs.athlete_id_2.astype("Int64").astype(str)
     subs["team_id"] = subs.team_id.astype("Int64")
 
-    # Net changes per stoppage, then pooled into the phase that stoppage falls in
+    to12 = to_secs.reindex(columns=[1, 2]).rename(columns={1: "to1", 2: "to2"})
+    subs = subs.join(to12, on=["game_id", "period_number"])
+    subs["phase"] = [phase_of(s, a, b) for s, a, b in zip(subs.secs, subs.to1, subs.to2)]
+    # Net changes per timeout window (subs at several dead balls around the timeout net out
+    # together); other phases net per stoppage. Then pool by phase.
+    subs["unit"] = subs.secs.where(~subs.phase.isin(["to1", "to2"]), -1)
     phases: dict[tuple, dict] = {}
-    for (gid, period, secs, team_id), grp in subs.groupby(["game_id", "period_number", "secs", "team_id"]):
-        to1 = to2 = float("nan")
-        if (gid, period) in to_secs.index:
-            to1, to2 = to_secs.loc[(gid, period)].reindex([1, 2])
-        ins, outs, pairs = net_changes(grp)
+    for (gid, period, phase, team_id, _), grp in subs.groupby(
+            ["game_id", "period_number", "phase", "team_id", "unit"], sort=False):
+        ins, outs, pairs = net_changes(grp.sort_values("sequence_number"))
         if not ins:
             continue
-        rec = phases.setdefault((gid, period, phase_of(secs, to1, to2), int(team_id)),
+        rec = phases.setdefault((gid, period, phase, int(team_id)),
                                 {"ins": [], "outs": [], "pairs": []})
         rec["ins"] += ins
         rec["outs"] += outs
