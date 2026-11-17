@@ -15,7 +15,7 @@ from pathlib import Path
 import pandas as pd
 import requests
 
-from .config import CURRENT_SEASON, SEASONS, TO_WINDOW_SECS
+from .config import CURRENT_SEASON, IGNORE_TO_FIRST_SECS, SEASONS, TO_WINDOW_SECS
 
 ROOT = Path(__file__).resolve().parent.parent
 RAW = ROOT / "data" / "raw"
@@ -100,7 +100,8 @@ def extract_season(season: int) -> None:
         .set_index("game_id")[["game_date", "season_type", "home_team_id", "home_team_abbrev",
                                "away_team_id", "away_team_abbrev"]]
     )
-    timeouts = pbp[pbp.type_text.str.contains("timeout", case=False, na=False)]
+    timeouts = pbp[pbp.type_text.str.contains("timeout", case=False, na=False)
+                   & (pbp.secs <= QUARTER_START - IGNORE_TO_FIRST_SECS)]  # skip first-2:00 timeouts
     # One stoppage = one (game, quarter, clock); both teams calling at the same dead ball counts once
     stoppages = timeouts.drop_duplicates(["game_id", "period_number", "secs"]).copy()
     stoppages["slot"] = stoppages.groupby(["game_id", "period_number"]).cumcount() + 1
