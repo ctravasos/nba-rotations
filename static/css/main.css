@@ -98,7 +98,7 @@ td.to-col { background: rgba(88, 166, 255, .05); }
 .r-out-text { color: #F07070; }
 
 /* Timeout cards */
-.card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(420px, 100%), 1fr)); gap: 12px; }
+.card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(480px, 100%), 1fr)); gap: 12px; }
 .to-card { background: var(--surface); border-radius: var(--radius); padding: 10px 12px; border: 1px solid var(--surface-2);
   min-width: 0; overflow-x: auto; }
 .to-card-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
@@ -140,11 +140,11 @@ td.to-col { background: rgba(88, 166, 255, .05); }
 .th-top { display: block; font-size: var(--fs-xs); font-weight: 500; color: var(--text-secondary); }
 
 /* Slot cards: fixed columns so Season and L10 are the same width; values bolder than headers */
-.mini { width: 100%; min-width: 400px; border-collapse: collapse; table-layout: fixed; font-variant-numeric: tabular-nums; }
-.mini col.c-dir { width: 5%; }
-.mini col.c-rate { width: 17%; }
-.mini col.c-ppg { width: 12%; }
-.mini col.c-split { width: 15%; }
+.mini { width: 100%; min-width: 470px; border-collapse: collapse; table-layout: fixed; font-variant-numeric: tabular-nums; }
+.mini col.c-dir { width: 4%; }
+.mini col.c-rate { width: 14%; }
+.mini col.c-ppg { width: 10%; }
+.mini col.c-split { width: 13%; }
 .mini th { color: var(--text-secondary); font-weight: 500; font-size: var(--fs-xs); text-transform: uppercase;
   letter-spacing: .04em; text-align: left; padding: 2px 6px; }
 .mini td { padding: 5px 6px; font-size: 13px; font-weight: 700; border-bottom: 1px solid rgba(255,255,255,.04); }
@@ -177,3 +177,4 @@ a.game-card:hover .game-cta { color: var(--accent); }
 /* Game page: stack the two teams when side by side would squeeze the cards */
 @media (max-width: 960px) { .matchup-row { grid-template-columns: 1fr; } }
 .day-label { margin: 8px 0 12px; font-size: var(--fs-lg); color: var(--text-secondary); font-weight: 600; }
+.mini td.muted-cell { color: var(--text-secondary); font-weight: 500; }

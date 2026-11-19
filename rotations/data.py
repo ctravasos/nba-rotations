@@ -10,6 +10,9 @@ Only ~25% of mid-quarter subs happen at TO1/TO2 themselves, so each quarter is s
 phases anchored on them and every substitution lands in exactly one:
     start | pre1 (before TO1) | to1 | mid (TO1 -> TO2) | to2 | post (after TO2)
 """
+import json
+import time
+from datetime import date, timedelta
 from pathlib import Path
 
 import pandas as pd
@@ -29,6 +32,10 @@ SOURCES = {
 
 REGULAR_SEASON = 2
 PLAYOFFS = 3
+PLAY_IN = 5
+
+SCOREBOARD = "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates={date}"
+CUP_FIRST_SEASON = 2024  # the In-Season Tournament / NBA Cup began in 2023-24
 
 
 def download(season: int, force: bool = False) -> None:
@@ -91,7 +98,7 @@ def extract_season(season: int) -> None:
     pbp = pd.read_parquet(RAW / f"play_by_play_{season}.parquet")
     box = pd.read_parquet(RAW / f"player_box_{season}.parquet")
 
-    pbp = pbp[pbp.season_type.isin([REGULAR_SEASON, PLAYOFFS]) & pbp.period_number.between(1, 4)]
+    pbp = pbp[pbp.season_type.isin([REGULAR_SEASON, PLAYOFFS, PLAY_IN]) & pbp.period_number.between(1, 4)]
     pbp = pbp.sort_values(["game_id", "period_number", "sequence_number"])
     pbp["secs"] = pbp.start_quarter_seconds_remaining
 
@@ -196,9 +203,32 @@ def extract_season(season: int) -> None:
     print(f"  {season}: {games.shape[0]} games, {len(stoppages)} timeout slots")
 
 
+def cup_games(season: int, force: bool = False) -> None:
+    """Save the ESPN game ids of NBA Cup games (group play through the final) to
+    data/raw/cup_{season}.json. The play-by-play files don't flag them, but ESPN's daily
+    scoreboard notes do ("NBA Cup - Group Play", "NBA In-Season Tournament Championship", ...)."""
+    dest = RAW / f"cup_{season}.json"
+    if season < CUP_FIRST_SEASON or (dest.exists() and not force):
+        return
+    ids = []
+    day, last = date(season - 1, 10, 20), min(date(season - 1, 12, 23), date.today())
+    print(f"  scanning {season - 1}-{str(season)[-2:]} schedule for NBA Cup games ...")
+    while day <= last:
+        resp = requests.get(SCOREBOARD.format(date=f"{day:%Y%m%d}"), timeout=30)
+        resp.raise_for_status()
+        for e in resp.json().get("events", []):
+            notes = " ".join(n.get("headline", "") for n in e["competitions"][0].get("notes", []))
+            if "NBA Cup" in notes or "In-Season Tournament" in notes:
+                ids.append(int(e["id"]))
+        day += timedelta(days=1)
+        time.sleep(0.25)
+    dest.write_text(json.dumps(sorted(ids)))
+
+
 def update(all_seasons: bool = False, force: bool = False) -> None:
     seasons = SEASONS if all_seasons else [CURRENT_SEASON]
     for season in seasons:
         # Current season changes daily; past seasons only need downloading once
         download(season, force=force or season == CURRENT_SEASON)
+        cup_games(season, force=force or season == CURRENT_SEASON)
         extract_season(season)

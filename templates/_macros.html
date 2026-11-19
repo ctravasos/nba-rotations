@@ -35,8 +35,8 @@
     <span class="to-meta">{% if c.median_clock %}median {{ c.median_clock }} · {% endif %}no sub {{ c.no_sub }}/{{ c.n }}</span>
   </div>
   <table class="mini">
-    <colgroup><col class="c-dir"><col><col class="c-rate">{% if show_recent %}<col class="c-rate">{% endif %}<col class="c-ppg"><col class="c-split"></colgroup>
-    <thead><tr><th></th><th>Player</th><th class="rate">Season</th>{% if show_recent %}<th class="rate">L{{ RECENT_GAMES }}</th>{% endif %}<th class="num">PPG</th><th class="num">2%/3%</th></tr></thead>
+    <colgroup><col class="c-dir"><col><col class="c-rate">{% if show_recent %}<col class="c-rate">{% endif %}<col class="c-rate"><col class="c-ppg"><col class="c-split"></colgroup>
+    <thead><tr><th></th><th>Player</th><th class="rate">Season</th>{% if show_recent %}<th class="rate">L{{ RECENT_GAMES }}</th>{% endif %}<th class="rate" title="Playoffs, play-in and NBA Cup games">PO/Cup</th><th class="num">PPG</th><th class="num">2%/3%</th></tr></thead>
     <tbody>
     {% set key = 'recent' if show_recent else 'rate' %}
     {% set ns = namespace(any=false) %}
@@ -48,13 +48,15 @@
         <td class="name"><a href="{{ base }}/players/{{ r.id }}/">{{ r.name }}</a></td>
         <td class="rate" style="{{ heat(r.rate, kind) }}">{{ r.rate|pct }}<span class="frac">{{ r.n }}/{{ r.gp }}</span></td>
         {% if show_recent %}<td class="rate" style="{{ heat(r.recent, kind) }}">{{ r.recent|pct }}</td>{% endif %}
+        {% if r.big is none %}<td class="rate muted-cell">–</td>
+        {% else %}<td class="rate" style="{{ heat(r.big, kind) }}">{{ (r.big * 100)|round|int }}%<span class="frac">{{ (r.big * r.big_gp)|round|int }}/{{ r.big_gp }}</span></td>{% endif %}
         <td class="num">{{ '%.1f'|format(r.ppg) }}</td>
         <td class="num">{{ r.two_three or '–' }}</td>
       </tr>
       {% endfor %}
     {% endfor %}
     {% if not ns.any %}
-      <tr><td colspan="6" class="muted">Nothing at {{ MIN_RATE_SHOWN|pct }}+ {{ 'season and L' ~ RECENT_GAMES if show_recent else 'this season' }}</td></tr>
+      <tr><td colspan="7" class="muted">Nothing at {{ MIN_RATE_SHOWN|pct }}+ {{ 'season and L' ~ RECENT_GAMES if show_recent else 'this season' }}</td></tr>
     {% endif %}
     </tbody>
   </table>

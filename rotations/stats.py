@@ -1,11 +1,12 @@
 """Turn extracted phase events into per-team / per-player rates for the site."""
+import json
 from collections import Counter
 from functools import lru_cache
 
 import pandas as pd
 
 from .config import CURRENT_SEASON, RECENT_GAMES, SEASONS
-from .data import PROCESSED, REGULAR_SEASON
+from .data import PLAY_IN, PLAYOFFS, PROCESSED, RAW, REGULAR_SEASON
 
 PHASES = ["start", "pre1", "to1", "mid", "to2", "post"]
 PHASE_LABELS = {"start": "Start", "pre1": "Before Timeout 1", "to1": "Timeout 1",
@@ -69,13 +70,14 @@ def short_name(name: str) -> str:
 
 
 @lru_cache(maxsize=None)
-def load(season: int) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+def _read(season: int) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    """Every game of the season (regular, play-in, playoffs), All-Star exhibitions removed."""
     slots = pd.read_parquet(PROCESSED / f"slots_{season}.parquet")
     players = pd.read_parquet(PROCESSED / f"players_{season}.parquet")
     teams = pd.read_parquet(PROCESSED / f"teams_{season}.parquet")
-    slots = slots[slots.season_type == REGULAR_SEASON]
     # All-Star / Rising Stars games are logged as regular season under one-off team codes
-    team_games = slots.groupby("team").game_id.nunique()
+    regular = slots[slots.season_type == REGULAR_SEASON]
+    team_games = regular.groupby("team").game_id.nunique()
     exhibition = team_games[team_games < 0.2 * team_games.max()].index
     slots = slots[~slots.team.isin(exhibition) & ~slots.opp.isin(exhibition)].copy()
     players = players[players.game_id.isin(slots.game_id)].copy()
@@ -83,9 +85,31 @@ def load(season: int) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         for c in cols:
             df[c] = df[c].replace(ABBR)
     teams["abbr"] = teams.team_abbreviation.replace(ABBR)
-    teams = teams[teams.abbr.isin(slots.team)]
+    teams = teams[teams.abbr.isin(regular.team.replace(ABBR))]
     slots.loc[(slots.period == 4) & slots.phase.isin(Q4_AFTER_TO1), "phase"] = "after1"
     return slots, players, teams
+
+
+@lru_cache(maxsize=None)
+def load(season: int) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    """Regular season only (NBA Cup games included, as they count in the standings)."""
+    slots, players, teams = _read(season)
+    slots = slots[slots.season_type == REGULAR_SEASON]
+    return slots, players[players.game_id.isin(slots.game_id)], teams
+
+
+def cup_ids(season: int) -> set[int]:
+    path = RAW / f"cup_{season}.json"
+    return set(json.loads(path.read_text())) if path.exists() else set()
+
+
+@lru_cache(maxsize=None)
+def load_big(season: int) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """High-leverage games: playoffs, play-in and NBA Cup (group play through the final)."""
+    slots, players, _ = _read(season)
+    big = slots.season_type.isin([PLAYOFFS, PLAY_IN]) | slots.game_id.isin(cup_ids(season))
+    slots = slots[big]
+    return slots, players[players.game_id.isin(slots.game_id)]
 
 
 def available_seasons() -> list[int]:
@@ -138,10 +162,16 @@ def team_season(season: int, abbr: str) -> dict:
     info["gp_recent"] = pd.Series({pid: len(g) for pid, g in last_played.items()}).reindex(info.index)
     info = info.sort_values(["gs", "mpg"], ascending=False)
 
+    big_slots, big_players = load_big(season)
+    big_ev = big_slots[big_slots.team == abbr]
+    info["gp_big"] = (big_players[big_players.team == abbr].groupby("player_id").game_id.nunique()
+                      .reindex(info.index).fillna(0).astype(int))
     rates = {
         "season": {"in": _rates(ev, info.gp, "ins"), "out": _rates(ev, info.gp, "outs")},
         "recent": {"in": _rates(ev, info.gp_recent, "ins", only=last_played),
                    "out": _rates(ev, info.gp_recent, "outs", only=last_played)},
+        "big": {"in": _rates(big_ev, info.gp_big[info.gp_big > 0], "ins"),
+                "out": _rates(big_ev, info.gp_big[info.gp_big > 0], "outs")},
     }
     names = info.name.to_dict()
     # Short names ("S. Curry") unless two teammates share one (Stephen and Seth Curry)
@@ -159,11 +189,15 @@ def team_season(season: int, abbr: str) -> dict:
         def top(key):
             season_rates = rates["season"]["in" if key == "ins" else "out"]
             recent_rates = rates["recent"]["in" if key == "ins" else "out"]
+            big_rates = rates["big"]["in" if key == "ins" else "out"]
             counts = Counter(p for ids in rows[key] for p in ids)
             out = [{"id": pid, "name": display[pid], "n": c, "gp": int(info.gp[pid]),
                     "ppg": info.ppg[pid], "two_three": info.two_three[pid],
                     "rate": season_rates[pid][(period, phase)],
-                    "recent": recent_rates.get(pid, {}).get((period, phase), 0)}
+                    "recent": recent_rates.get(pid, {}).get((period, phase), 0),
+                    # None = no playoff / play-in / Cup games with this team yet
+                    "big": big_rates.get(pid, {}).get((period, phase), 0) if info.gp_big[pid] else None,
+                    "big_gp": int(info.gp_big[pid])}
                    for pid, c in counts.items() if pid in active]
             return sorted(out, key=lambda r: -r["rate"])
 
@@ -196,7 +230,7 @@ def team_season(season: int, abbr: str) -> dict:
     t = teams[teams.abbr == abbr].iloc[0]
     return {"abbr": abbr, "name": t.team_display_name, "logo": t.team_logo,
             "color": f"#{t.team_color}" if t.team_color else None,
-            "games": len(game_ids),
+            "games": len(game_ids), "big_games": int(big_ev.game_id.nunique()),
             "players": info[info.index.isin(active)].reset_index().to_dict("records"),
             "rates": rates, "cards": cards, "log": log}
 
