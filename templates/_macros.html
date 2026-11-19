@@ -41,7 +41,7 @@
     {% set key = 'recent' if show_recent else 'rate' %}
     {% set ns = namespace(any=false) %}
     {% for kind, rows in (('in', c.ins), ('out', c.outs)) %}
-      {% for r in rows|selectattr(key, 'ge', MIN_RATE_SHOWN)|sort(attribute=key, reverse=true) %}
+      {% for r in rows|selectattr('rate', 'ge', MIN_RATE_SHOWN)|selectattr(key, 'ge', MIN_RATE_SHOWN)|sort(attribute=key, reverse=true) %}
       {% set ns.any = true %}
       <tr class="{{ 'group-start' if loop.first }}">
         <td class="dir dir-{{ kind }}">{{ '▲' if kind == 'in' else '▼' }}</td>
@@ -54,7 +54,7 @@
       {% endfor %}
     {% endfor %}
     {% if not ns.any %}
-      <tr><td colspan="6" class="muted">Nothing at {{ MIN_RATE_SHOWN|pct }}+ {{ 'over the L' ~ RECENT_GAMES if show_recent else 'this season' }}</td></tr>
+      <tr><td colspan="6" class="muted">Nothing at {{ MIN_RATE_SHOWN|pct }}+ {{ 'season and L' ~ RECENT_GAMES if show_recent else 'this season' }}</td></tr>
     {% endif %}
     </tbody>
   </table>
