@@ -33,11 +33,14 @@ jobs:
 
       - run: pip install -r requirements.txt
 
-      # Past seasons never change: cache their raw files so only the current season downloads daily
+      # Past seasons never change: cache raw files (play-by-play, box scores, NBA Cup game lists)
+      # so only the current season downloads each run. A new key per run saves any newly added
+      # files; restore-keys picks up the most recent cache.
       - uses: actions/cache@v4
         with:
           path: data/raw
-          key: raw-seasons-v1
+          key: raw-${{ github.run_id }}
+          restore-keys: raw-
 
       - run: python run.py update --all
       - run: python run.py build
