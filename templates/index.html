@@ -7,26 +7,31 @@
   </div>
 </div>
 
-{% if games %}
-<div class="game-strip">
-  {% for g in games %}
-  <a class="game-card" href="{{ base }}/games/{{ g.id }}/">
-    <div class="game-status">{{ g.status }}</div>
-    {% for side in ('away', 'home') %}
-    <div class="game-team" style="--team-c: {{ g[side].color or 'var(--surface-2)' }}">
-      {% if g[side].logo %}<img src="{{ g[side].logo }}" alt="">{% endif %}
-      <div class="game-team-name">
-        <span class="full">{{ g[side].short }}</span>
-        <span class="muted">{{ g[side].abbr }} · {{ g[side].record or '' }}</span>
+{% for d in days %}
+<section class="day" data-date="{{ d.date }}" {{ '' if d.is_build_day else 'hidden' }}>
+  <h2 class="day-label">{{ d.label }}</h2>
+  {% if d.games %}
+  <div class="game-strip">
+    {% for g in d.games %}
+    <a class="game-card" href="{{ base }}/games/{{ g.id }}/">
+      <div class="game-status">{{ g.status }}</div>
+      {% for side in ('away', 'home') %}
+      <div class="game-team" style="--team-c: {{ g[side].color or 'var(--surface-2)' }}">
+        {% if g[side].logo %}<img src="{{ g[side].logo }}" alt="">{% endif %}
+        <div class="game-team-name">
+          <span class="full">{{ g[side].short }}</span>
+          <span class="muted">{{ g[side].abbr }} · {{ g[side].record or '' }}</span>
+        </div>
+        <span class="score">{{ g[side].score if g.started else '' }}</span>
       </div>
-      <span class="score">{{ g[side].score if g.started else '' }}</span>
-    </div>
+      {% endfor %}
+      <div class="game-cta">View timeout & break subs →</div>
+    </a>
     {% endfor %}
-    <div class="game-cta">View timeout & break subs →</div>
-  </a>
-  {% endfor %}
-</div>
-{% else %}
-<p class="muted">No games today.</p>
-{% endif %}
+  </div>
+  {% else %}
+  <p class="muted">No games.</p>
+  {% endif %}
+</section>
+{% endfor %}
 {% endblock %}

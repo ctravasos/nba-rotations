@@ -1,7 +1,8 @@
 """Render the static site into site/ (deploy that folder to Netlify / Vercel / Cloudflare Pages)."""
 import os
 import shutil
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 
 import requests
 from jinja2 import Environment, FileSystemLoader, select_autoescape
@@ -12,7 +13,7 @@ from .data import ROOT
 
 SITE = ROOT / "site"
 SCOREBOARD = "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates={date}"
-EASTERN = timezone(timedelta(hours=-5))  # NBA dates are Eastern; DST shift doesn't matter for "today"
+EASTERN = ZoneInfo("America/New_York")  # NBA game dates are Eastern
 
 env = Environment(loader=FileSystemLoader(ROOT / "templates"), autoescape=select_autoescape(),
                   trim_blocks=True, lstrip_blocks=True)
@@ -52,10 +53,9 @@ def season_path(season: int) -> str:
 env.globals["season_path"] = season_path
 
 
-def todays_games() -> list[dict]:
-    today = datetime.now(EASTERN).strftime("%Y%m%d")
+def games_on(day) -> list[dict]:
     try:
-        events = requests.get(SCOREBOARD.format(date=today), timeout=20).json().get("events", [])
+        events = requests.get(SCOREBOARD.format(date=day.strftime("%Y%m%d")), timeout=20).json().get("events", [])
     except requests.RequestException:
         return []
     games = []
@@ -88,12 +88,20 @@ def build() -> None:
     team_list = sorted(teams.to_dict("records"), key=lambda t: t["team_display_name"])
 
     players_now = stats.all_players(CURRENT_SEASON)
-    games = [g for g in todays_games() if {g["away"]["abbr"], g["home"]["abbr"]} <= set(teams.abbr)]
-    write("", "index.html", games=games, active="home", **common)
-    for g in games:
-        write(f"games/{g['id']}", "game.html", g=g, active="home",
-              away=stats.team_season(CURRENT_SEASON, g["away"]["abbr"]),
-              home=stats.team_season(CURRENT_SEASON, g["home"]["abbr"]), **common)
+    # Yesterday, today and tomorrow: the Today page picks the visitor's current Eastern date in
+    # the browser, so it stays right even when a scheduled rebuild runs hours late
+    today = datetime.now(EASTERN).date()
+    days = []
+    for offset in (-1, 0, 1):
+        day = today + timedelta(days=offset)
+        games = [g for g in games_on(day) if {g["away"]["abbr"], g["home"]["abbr"]} <= set(teams.abbr)]
+        days.append({"date": day.isoformat(), "label": f"{day:%A, %B} {day.day}", "games": games,
+                     "is_build_day": offset == 0})
+        for g in games:
+            write(f"games/{g['id']}", "game.html", g=g, active="home",
+                  away=stats.team_season(CURRENT_SEASON, g["away"]["abbr"]),
+                  home=stats.team_season(CURRENT_SEASON, g["home"]["abbr"]), **common)
+    write("", "index.html", days=days, active="home", **common)
     write("teams", "teams.html", teams=team_list, active="teams", **common)
     write("about", "about.html", active="about", **common)
 

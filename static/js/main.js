@@ -51,3 +51,13 @@ document.querySelectorAll("[data-filter-table], [data-min-gp]").forEach((el) => 
   el.addEventListener("input", () => applyFilters(name));
   applyFilters(name);
 });
+
+// Today page: the build ships yesterday / today / tomorrow; show the visitor's current
+// Eastern-time date (falls back to the latest earlier day, then the first).
+const days = [...document.querySelectorAll("section.day[data-date]")];
+if (days.length) {
+  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York" }).format(new Date());
+  const pick = days.find((d) => d.dataset.date === today)
+    || days.filter((d) => d.dataset.date <= today).pop() || days[0];
+  days.forEach((d) => { d.hidden = d !== pick; });
+}

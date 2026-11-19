@@ -176,3 +176,4 @@ a.game-card:hover .game-cta { color: var(--accent); }
 .mini td.muted { font-weight: 400; font-size: var(--fs-sm); color: var(--text-secondary); }
 /* Game page: stack the two teams when side by side would squeeze the cards */
 @media (max-width: 960px) { .matchup-row { grid-template-columns: 1fr; } }
+.day-label { margin: 8px 0 12px; font-size: var(--fs-lg); color: var(--text-secondary); font-weight: 600; }

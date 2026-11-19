@@ -3,7 +3,10 @@ name: Build and deploy
 
 on:
   schedule:
-    - cron: "0 14 * * *"   # 9-10am Eastern, after the sportsdataverse overnight refresh
+    # Several runs a day: GitHub often starts scheduled jobs hours late, so one daily run can
+    # leave yesterday's slate up. Off the top of the hour, when GitHub's queue is lighter.
+    # (UTC; roughly 6am, 10am, 2pm, 6pm Eastern)
+    - cron: "23 11,15,19,23 * * *"
   workflow_dispatch:       # "Run workflow" button for manual rebuilds
   push:
     branches: [main]
