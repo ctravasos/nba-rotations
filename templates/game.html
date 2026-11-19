@@ -14,9 +14,6 @@
   {% if side == 'away' %}<div class="matchup-at"><span>@</span><span class="muted">{{ g.status }}</span></div>{% endif %}
   {% endfor %}
 </div>
-<p class="hint">{{ season_label(CURRENT_SEASON) }} season rates for each team at every timeout and quarter break.
-  % = share of games the player played. <b>L{{ RECENT_GAMES }}</b> = each player's last {{ RECENT_GAMES }} games played (games they missed are skipped); only players at {{ MIN_RATE_SHOWN|pct }}+ both season-wide and over the L{{ RECENT_GAMES }} are listed. Players who haven't played in any of the team's last {{ RECENT_GAMES }} games are hidden.
-  Timeouts in the first 2:00 of a quarter are ignored; timeouts include subs within 1:00 of game clock before/after; breaks only the break itself. <b>Playoffs</b> = playoff, play-in and NBA Cup games (– = none yet with this team). <b>2%/3%</b> = share of made field goals that are 2s / 3s.</p>
 
 {% for i in range(SLOTS|length) %}
 <div class="matchup-slot {{ 'break-row' if SLOTS[i].is_break }}">{{ SLOTS[i].label }}</div>
@@ -25,4 +22,8 @@
   {{ slot_card(home.cards[i], true, home.abbr) }}
 </div>
 {% endfor %}
+<h2>Notes</h2>
+<p class="hint notes">{{ season_label(CURRENT_SEASON) }} season rates for each team at every timeout and quarter break.
+  % = share of games the player played. <b>L{{ RECENT_GAMES }}</b> = each player's last {{ RECENT_GAMES }} games played (games they missed are skipped); only players at {{ MIN_RATE_SHOWN|pct }}+ both season-wide and over the L{{ RECENT_GAMES }} are listed. Players who haven't played in any of the team's last {{ RECENT_GAMES }} games are hidden.
+  Timeouts in the first 2:00 of a quarter are ignored; timeouts include subs within 1:00 of game clock before/after; breaks only the break itself. <b>Playoffs</b> = playoff, play-in and NBA Cup games (– = none yet with this team). <b>2%/3%</b> = share of made field goals that are 2s / 3s.</p>
 {% endblock %}
