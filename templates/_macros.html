@@ -36,7 +36,7 @@
   </div>
   <table class="mini">
     <colgroup><col class="c-dir"><col><col class="c-rate">{% if show_recent %}<col class="c-rate">{% endif %}<col class="c-rate"><col class="c-ppg"><col class="c-split"></colgroup>
-    <thead><tr><th></th><th>Player</th><th class="rate">Season</th>{% if show_recent %}<th class="rate">L{{ RECENT_GAMES }}</th>{% endif %}<th class="rate" title="Playoffs, play-in and NBA Cup games">PO/Cup</th><th class="num">PPG</th><th class="num">2%/3%</th></tr></thead>
+    <thead><tr><th></th><th>Player</th><th class="rate">Season</th>{% if show_recent %}<th class="rate">L{{ RECENT_GAMES }}</th>{% endif %}<th class="rate" title="Playoffs, play-in and NBA Cup games">Playoffs</th><th class="num">PPG</th><th class="num">2%/3%</th></tr></thead>
     <tbody>
     {% set key = 'recent' if show_recent else 'rate' %}
     {% set ns = namespace(any=false) %}
