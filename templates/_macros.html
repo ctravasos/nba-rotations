@@ -28,8 +28,8 @@
 </td>
 {%- endmacro %}
 
-{% macro slot_card(c, show_recent, label=None) -%}
-<div class="to-card {{ 'break-card' if c.is_break }}">
+{% macro slot_card(c, show_recent, label=None, color=None) -%}
+<div class="to-card {{ 'break-card' if c.is_break }}"{% if color %} style="--team-c: {{ color }}"{% endif %}>
   <div class="to-card-head">
     <span class="to-label">{{ label or c.label }}</span>
     <span class="to-meta">{% if c.median_clock %}median {{ c.median_clock }} · {% endif %}no sub {{ c.no_sub }}/{{ c.n }}</span>

@@ -66,8 +66,8 @@
 {% for i in range(SLOTS|length) %}
 <div class="matchup-slot {{ 'break-row' if SLOTS[i].is_break }}">{{ SLOTS[i].label }}</div>
 <div class="matchup-row">
-  {{ slot_card(away.cards[i], true, away.abbr) }}
-  {{ slot_card(home.cards[i], true, home.abbr) }}
+  {{ slot_card(away.cards[i], true, away.abbr, away.color) }}
+  {{ slot_card(home.cards[i], true, home.abbr, home.color) }}
 </div>
 {% endfor %}
 <h2>Notes</h2>

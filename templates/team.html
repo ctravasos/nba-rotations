@@ -15,7 +15,7 @@
 <h2>Timeout & quarter-break subs</h2>
 <div class="card-grid">
   {% for c in t.cards %}
-  {{ slot_card(c, show_recent) }}
+  {{ slot_card(c, show_recent, color=t.color) }}
   {% endfor %}
 </div>
 

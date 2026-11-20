@@ -1,6 +1,6 @@
 /* Design tokens follow nba.fast-stats.com: dark surfaces, single blue accent, dense tables */
 :root {
-  --accent: #58A6FF;
+  --accent: #E8EAED;  /* neutral: only green/red and team colours carry colour */
   --nav-bg: #000000;
   --bg: #14171C;
   --surface: #1E232B;
@@ -85,7 +85,7 @@ th.to-col { color: var(--accent); }
 .player-cell a { display: block; font-weight: 600; }
 .player-cell .muted { font-size: var(--fs-xs); }
 .rate-cell { min-width: 52px; padding: 3px 4px !important; }
-td.to-col { background: rgba(88, 166, 255, .05); }
+td.to-col { background: rgba(255, 255, 255, .045); }
 .r-in, .r-out { display: block; border-radius: 3px; padding: 1px 3px; margin: 1px 0; font-size: var(--fs-xs); font-weight: 600; }
 .dir-in { color: var(--color-in); }
 .dir-out { color: var(--color-out); }
@@ -194,7 +194,7 @@ a.game-card:hover .game-cta { color: var(--accent); }
 .keymap .keymap-empty td { text-align: left; padding: 12px; }
 
 /* Slot headers: large highlighted bands (game page) and tinted title strips (team page cards) */
-:root { --break: #F5A623; }
+:root { --break: #FFFFFF; }
 .matchup-slot { margin: 30px 0 10px; padding: 10px 16px; font-size: 20px; font-weight: 800; letter-spacing: .01em;
   color: #fff; border-left: 5px solid var(--accent); border-radius: var(--radius);
   background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 32%, var(--surface)), var(--surface) 70%); }
@@ -207,3 +207,22 @@ a.game-card:hover .game-cta { color: var(--accent); }
 .break-card .to-card-head { background: color-mix(in srgb, var(--break) 18%, var(--surface)); }
 /* game page cards are labelled by team: keep that label in the accent colour */
 .matchup-row .to-label { color: var(--accent); }
+
+/* Neutral palette overrides: links white, headings white/grey, team colours on card strips */
+a { color: var(--text); font-weight: 600; }
+a:hover { color: #fff; }
+.pill.active { background: #E8EAED; border-color: #E8EAED; color: #000; }
+th.to-col { color: #fff; font-weight: 700; }
+.stat-table th.to-col { background: #262C35; }
+.matchup-slot { border-left-color: var(--text-secondary); color: #fff;
+  background: linear-gradient(90deg, #343C48, var(--surface) 70%); }
+.matchup-slot.break-row { border-left-color: #fff; background: linear-gradient(90deg, #4A5260, var(--surface) 70%); }
+.to-card-head { background: color-mix(in srgb, var(--team-c, #343C48) 40%, var(--surface)); }
+.break-card { border-color: #9BA4B4; }
+.break-card .to-card-head { background: color-mix(in srgb, var(--team-c, #4A5260) 55%, #3A414D); }
+.matchup-row .to-label, .to-label { color: #fff; }
+.game-status { color: var(--text); }
+.chip { background: #343C48; border-color: #9BA4B4; }
+.chip:hover { background: #424A57; }
+.nav-logo { color: #fff; }
+.to-card-head .to-meta { color: rgba(255,255,255,.85); text-shadow: 0 1px 2px rgba(0,0,0,.5); }
