@@ -10,14 +10,10 @@ from .data import PLAY_IN, PLAYOFFS, PROCESSED, RAW, REGULAR_SEASON
 
 PHASES = ["start", "pre1", "to1", "mid", "to2", "post"]
 PHASE_LABELS = {"start": "Start", "pre1": "Before Timeout 1", "to1": "Timeout 1",
-                "mid": "Between Timeouts", "to2": "Timeout 2", "post": "After Timeout 2",
-                "after1": "After Timeout 1"}
-Q4_AFTER_TO1 = ("mid", "to2", "post")  # 4Q TO2 isn't tracked: everything after 4Q TO1 is one phase
+                "mid": "Between Timeouts", "to2": "Timeout 2", "post": "After Timeout 2"}
 
-# Rotation map columns. 1Q start is just the starters; 4Q collapses after TO1.
-COLUMNS = ([(1, p) for p in PHASES[1:]]
-           + [(q, p) for q in (2, 3) for p in PHASES]
-           + [(4, "start"), (4, "pre1"), (4, "to1"), (4, "after1")])
+# Rotation map columns. 1Q start is just the starters.
+COLUMNS = [(1, p) for p in PHASES[1:]] + [(q, p) for q in (2, 3, 4) for p in PHASES]
 
 
 def column_label(period: int, phase: str) -> str:
@@ -49,7 +45,7 @@ SLOTS = [{"period": q, "phase": p, "label": slot_label(q, p), "is_break": p == "
           # two-line form for narrow table headers
           "top": quarter_label(q, p), "bottom": "Break" if p == "start" else PHASE_LABELS[p]}
          for q, p in [(1, "to1"), (1, "to2"), (2, "start"), (2, "to1"), (2, "to2"),
-                      (3, "to1"), (3, "to2"), (4, "start"), (4, "to1")]]
+                      (3, "to1"), (3, "to2"), (4, "start"), (4, "to1"), (4, "to2")]]
 SLOT_KEYS = [(s["period"], s["phase"]) for s in SLOTS]
 
 # ESPN -> standard NBA abbreviations
@@ -86,7 +82,6 @@ def _read(season: int) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
             df[c] = df[c].replace(ABBR)
     teams["abbr"] = teams.team_abbreviation.replace(ABBR)
     teams = teams[teams.abbr.isin(regular.team.replace(ABBR))]
-    slots.loc[(slots.period == 4) & slots.phase.isin(Q4_AFTER_TO1), "phase"] = "after1"
     return slots, players, teams
 
 
@@ -118,7 +113,7 @@ def available_seasons() -> list[int]:
 
 def _rates(events: pd.DataFrame, gp: pd.Series, key: str, only: dict[str, set] | None = None) -> dict:
     """{player: {(period, phase): share of games}} for players listed in events[key].
-    Counts games, not events: a merged phase (4Q After TO1) can hold several rows per game.
+    Counts games, not events, so a player is counted at most once per game and phase.
     `only` limits each player to their own set of games (e.g. their last 10 played)."""
     out: dict[str, dict[tuple, set]] = {}
     for gid, period, phase, ids in zip(events.game_id, events.period, events.phase, events[key]):
