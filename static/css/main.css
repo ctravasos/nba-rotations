@@ -131,9 +131,6 @@ td.to-col { background: rgba(88, 166, 255, .05); }
 .matchup-home { flex-direction: row-reverse; text-align: right;
   background: linear-gradient(270deg, color-mix(in srgb, var(--team-c) 45%, var(--surface)), var(--surface)); }
 .matchup-at { display: flex; flex-direction: column; align-items: center; font-weight: 700; font-size: var(--fs-lg); }
-.matchup-slot { margin: 18px 0 6px; font-weight: 700; color: var(--accent); text-align: center;
-  border-bottom: 1px solid var(--surface-2); padding-bottom: 4px; }
-.matchup-slot.break-row { color: var(--text); background: color-mix(in srgb, var(--accent) 18%, transparent); border-radius: var(--radius); padding: 4px; }
 .matchup-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: start; }
 @media (max-width: 700px) { .matchup-header { grid-template-columns: 1fr; } }
 .stat-table th.wrap { white-space: normal; min-width: 64px; line-height: 1.2; }
@@ -195,3 +192,18 @@ a.game-card:hover .game-cta { color: var(--accent); }
 .picker-item:hover { background: var(--surface-hover); }
 .picker-name { font-weight: 600; flex: 1; }
 .keymap .keymap-empty td { text-align: left; padding: 12px; }
+
+/* Slot headers: large highlighted bands (game page) and tinted title strips (team page cards) */
+:root { --break: #F5A623; }
+.matchup-slot { margin: 30px 0 10px; padding: 10px 16px; font-size: 20px; font-weight: 800; letter-spacing: .01em;
+  color: #fff; border-left: 5px solid var(--accent); border-radius: var(--radius);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 32%, var(--surface)), var(--surface) 70%); }
+.matchup-slot.break-row { border-left-color: var(--break);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--break) 30%, var(--surface)), var(--surface) 70%); }
+.to-card-head { margin: -10px -12px 8px; padding: 8px 12px; border-radius: var(--radius) var(--radius) 0 0;
+  border-bottom: 1px solid var(--surface-2); background: color-mix(in srgb, var(--accent) 14%, var(--surface)); }
+.to-label { font-size: 16px; font-weight: 800; color: #fff; }
+.break-card { border-color: color-mix(in srgb, var(--break) 55%, var(--surface-2)); }
+.break-card .to-card-head { background: color-mix(in srgb, var(--break) 18%, var(--surface)); }
+/* game page cards are labelled by team: keep that label in the accent colour */
+.matchup-row .to-label { color: var(--accent); }
