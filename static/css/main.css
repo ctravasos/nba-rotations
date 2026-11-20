@@ -178,3 +178,20 @@ a.game-card:hover .game-cta { color: var(--accent); }
 @media (max-width: 960px) { .matchup-row { grid-template-columns: 1fr; } }
 .day-label { margin: 8px 0 12px; font-size: var(--fs-lg); color: var(--text-secondary); font-weight: 600; }
 .mini td.muted-cell { color: var(--text-secondary); font-weight: 500; }
+
+/* Game page Key Players picker */
+.player-picker { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 4px 0 12px; }
+.picker-toggle { font-size: var(--fs-base); padding: 6px 14px; }
+.picker-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { background: color-mix(in srgb, var(--accent) 22%, var(--surface)); color: var(--text); border: 1px solid var(--accent);
+  border-radius: 999px; padding: 4px 10px; font: 600 var(--fs-sm) var(--font); cursor: pointer; }
+.chip:hover { background: color-mix(in srgb, var(--accent) 35%, var(--surface)); }
+.picker-panel { position: absolute; top: 100%; left: 0; z-index: 20; margin-top: 6px; width: min(420px, 90vw);
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.45); }
+.picker-search { width: 100%; margin-bottom: 8px; }
+.picker-list { max-height: 360px; overflow-y: auto; }
+.picker-item { display: flex; align-items: center; gap: 8px; padding: 5px 6px; border-radius: 4px; cursor: pointer; }
+.picker-item:hover { background: var(--surface-hover); }
+.picker-name { font-weight: 600; flex: 1; }
+.keymap .keymap-empty td { text-align: left; padding: 12px; }

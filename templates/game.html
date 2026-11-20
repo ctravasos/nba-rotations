@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "_macros.html" import slot_card %}
+{% from "_macros.html" import slot_card, phase_header, rate_cell %}
 {% block title %}{{ away.abbr }} @ {{ home.abbr }} — NBA Sub Patterns{% endblock %}
 {% block content %}
 <div class="page-header matchup-header">
@@ -22,6 +22,53 @@
   {{ slot_card(home.cards[i], true, home.abbr) }}
 </div>
 {% endfor %}
+<h2>Key Players</h2>
+<p class="hint">Pick the players you want to track from either roster (highest PPG first). Their rotation map shows how often
+  they check in ▲ / out ▼ in every phase of the game. Your picks are saved in this browser for this game, and the page link includes them, so you can send it to a teammate.</p>
+<div class="player-picker" data-picker="{{ g.id }}">
+  <button type="button" class="pill picker-toggle">Select players ▾</button>
+  <div class="picker-chips"></div>
+  <div class="picker-panel" hidden>
+    <input type="search" class="filter-input picker-search" placeholder="Search players…">
+    <div class="picker-list">
+      {% for p in key_players %}
+      <label class="picker-item" data-search="{{ p.name|lower }} {{ p.team|lower }}">
+        <input type="checkbox" value="{{ p.player_id }}" data-label="{{ p.name }} ({{ p.team }})">
+        <span class="picker-name">{{ p.name }}</span>
+        <span class="muted">{{ p.team }} · {{ '%.1f'|format(p.ppg) }} PPG</span>
+      </label>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+<div class="pill-group toggle" data-toggle="keymap">
+  <button class="pill active" data-show="season">Season</button>
+  <button class="pill" data-show="recent">Last {{ RECENT_GAMES }}</button>
+</div>
+{% for window in ('season', 'recent') %}
+<div class="table-wrap" data-panel="keymap" data-name="{{ window }}" {{ 'hidden' if window != 'season' }}>
+<table class="stat-table rotmap keymap">
+  <thead>{{ phase_header(COLUMNS) }}</thead>
+  <tbody>
+  {% for p in key_players %}
+    {% set rin = p[window ~ '_in'] %}
+    {% set rout = p[window ~ '_out'] %}
+    <tr data-pid="{{ p.player_id }}" hidden>
+      <td class="sticky-col player-cell">
+        <a href="{{ base }}/players/{{ p.player_id }}/">{{ p.name }}</a>
+        <span class="muted">{{ p.team }} · {{ '%.1f'|format(p.ppg) }} PPG · {{ p.gp if window == 'season' else p.gp_recent|int }} GP · {{ '%.1f'|format(p.mpg) }} MPG</span>
+      </td>
+      {% for q, ph in COLUMNS %}
+        {{ rate_cell(rin.get((q, ph), 0), rout.get((q, ph), 0), loop.first or COLUMNS[loop.index0 - 1][0] != q, is_slot(q, ph)) }}
+      {% endfor %}
+    </tr>
+  {% endfor %}
+    <tr class="keymap-empty"><td colspan="{{ COLUMNS|length + 1 }}" class="muted">No players selected — use “Select players” above.</td></tr>
+  </tbody>
+</table>
+</div>
+{% endfor %}
+
 <h2>Notes</h2>
 <p class="hint notes">{{ season_label(CURRENT_SEASON) }} season rates for each team at every timeout and quarter break.
   % = share of games the player played. <b>L{{ RECENT_GAMES }}</b> = each player's last {{ RECENT_GAMES }} games played (games they missed are skipped); only players at {{ MIN_RATE_SHOWN|pct }}+ both season-wide and over the L{{ RECENT_GAMES }} are listed. Players who haven't played in any of the team's last {{ RECENT_GAMES }} games are hidden.

@@ -98,9 +98,10 @@ def build() -> None:
         days.append({"date": day.isoformat(), "label": f"{day:%A, %B} {day.day}", "games": games,
                      "is_build_day": offset == 0})
         for g in games:
-            write(f"games/{g['id']}", "game.html", g=g, active="home",
-                  away=stats.team_season(CURRENT_SEASON, g["away"]["abbr"]),
-                  home=stats.team_season(CURRENT_SEASON, g["home"]["abbr"]), **common)
+            away = stats.team_season(CURRENT_SEASON, g["away"]["abbr"])
+            home = stats.team_season(CURRENT_SEASON, g["home"]["abbr"])
+            write(f"games/{g['id']}", "game.html", g=g, active="home", away=away, home=home,
+                  key_players=stats.key_players(away, home), **common)
     write("", "index.html", days=days, active="home", **common)
     write("teams", "teams.html", teams=team_list, active="teams", **common)
     write("about", "about.html", active="about", **common)

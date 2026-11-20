@@ -288,3 +288,17 @@ def player_history(player_id: str) -> dict | None:
         return None
     return {"id": player_id, "name": meta["name"], "pos": meta.pos, "headshot": meta.headshot,
             "stints": stints}
+
+
+def key_players(*team_stats: dict) -> list[dict]:
+    """Both teams' listed players with their rotation-map rates, highest PPG first
+    (for the game page's Key Players picker)."""
+    rows = []
+    for t in team_stats:
+        r = t["rates"]
+        for p in t["players"]:
+            pid = p["player_id"]
+            rows.append({**p, "team": t["abbr"],
+                         "season_in": r["season"]["in"].get(pid, {}), "season_out": r["season"]["out"].get(pid, {}),
+                         "recent_in": r["recent"]["in"].get(pid, {}), "recent_out": r["recent"]["out"].get(pid, {})})
+    return sorted(rows, key=lambda p: -p["ppg"])

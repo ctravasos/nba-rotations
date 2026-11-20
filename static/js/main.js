@@ -61,3 +61,47 @@ if (days.length) {
     || days.filter((d) => d.dataset.date <= today).pop() || days[0];
   days.forEach((d) => { d.hidden = d !== pick; });
 }
+
+// Game page "Key Players": pick players from both rosters; only their rotation-map rows show.
+// Picks are saved per game in localStorage and in the URL (#players=id,id) so a link shares them.
+document.querySelectorAll(".player-picker").forEach((picker) => {
+  const storeKey = `keyplayers:${picker.dataset.picker}`;
+  const panel = picker.querySelector(".picker-panel");
+  const chips = picker.querySelector(".picker-chips");
+  const boxes = [...picker.querySelectorAll('input[type="checkbox"]')];
+  const search = picker.querySelector(".picker-search");
+
+  function render() {
+    const chosen = boxes.filter((b) => b.checked).map((b) => b.value);
+    localStorage.setItem(storeKey, JSON.stringify(chosen));
+    history.replaceState(null, "", chosen.length ? `#players=${chosen.join(",")}` : location.pathname);
+    chips.replaceChildren(...boxes.filter((b) => b.checked).map((b) => {
+      const chip = document.createElement("button");
+      chip.type = "button";
+      chip.className = "chip";
+      chip.textContent = `${b.dataset.label} ×`;
+      chip.addEventListener("click", () => { b.checked = false; render(); });
+      return chip;
+    }));
+    document.querySelectorAll("table.keymap").forEach((table) => {
+      table.querySelectorAll("tr[data-pid]").forEach((row) => { row.hidden = !chosen.includes(row.dataset.pid); });
+      table.querySelector(".keymap-empty").hidden = chosen.length > 0;
+    });
+  }
+
+  let saved = [];
+  const fromUrl = location.hash.match(/players=([\d,]+)/);
+  if (fromUrl) saved = fromUrl[1].split(",");
+  else try { saved = JSON.parse(localStorage.getItem(storeKey) || "[]"); } catch { saved = []; }
+  boxes.forEach((b) => { b.checked = saved.includes(b.value); b.addEventListener("change", render); });
+  picker.querySelector(".picker-toggle").addEventListener("click", () => {
+    panel.hidden = !panel.hidden;
+    if (!panel.hidden) search.focus();
+  });
+  search.addEventListener("input", () => {
+    const q = search.value.trim().toLowerCase();
+    picker.querySelectorAll(".picker-item").forEach((item) => { item.hidden = !!q && !item.dataset.search.includes(q); });
+  });
+  document.addEventListener("click", (e) => { if (!picker.contains(e.target)) panel.hidden = true; });
+  render();
+});
