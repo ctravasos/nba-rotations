@@ -302,3 +302,21 @@ def key_players(*team_stats: dict) -> list[dict]:
                          "season_in": r["season"]["in"].get(pid, {}), "season_out": r["season"]["out"].get(pid, {}),
                          "recent_in": r["recent"]["in"].get(pid, {}), "recent_out": r["recent"]["out"].get(pid, {})})
     return sorted(rows, key=lambda p: -p["ppg"])
+
+
+def vs_opponent_cards(t: dict, season: int, opp: str) -> list[dict]:
+    """Copy of a team's slot cards with each row's rate in this season's games against `opp`
+    (all game types). Used for the "vs OPP" column on game pages."""
+    slots, players, _ = _read(season)
+    ev = slots[(slots.team == t["abbr"]) & (slots.opp == opp)]
+    games = players[(players.team == t["abbr"]) & players.game_id.isin(ev.game_id)]
+    gp = games.groupby("player_id").game_id.nunique()
+    rates = {"in": _rates(ev, gp, "ins"), "out": _rates(ev, gp, "outs")}
+    cards = []
+    for c in t["cards"]:
+        key = (c["period"], c["phase"])
+        rows = [{**r, "vs_gp": int(gp.get(r["id"], 0)),
+                 "vs": rates[r["kind"]].get(r["id"], {}).get(key, 0) if r["id"] in gp.index else None}
+                for r in c["rows"]]
+        cards.append({**c, "rows": rows})
+    return cards

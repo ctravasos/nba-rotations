@@ -40,6 +40,17 @@ def heat(rate: float, kind: str) -> str:
 env.globals["heat"] = heat
 
 
+def text_heat(rate: float, kind: str) -> str:
+    """Inline text colour (no background) for secondary rate columns: brighter = higher rate."""
+    if rate is None:
+        return ""
+    rgb = "91,208,122" if kind == "in" else "240,112,112"
+    return f"color: rgba({rgb},{0.35 + 0.65 * min(rate, 1):.2f})"
+
+
+env.globals["text_heat"] = text_heat
+
+
 def write(path: str, template: str, **ctx) -> None:
     out = SITE / path / "index.html"
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -101,6 +112,8 @@ def build() -> None:
             away = stats.team_season(CURRENT_SEASON, g["away"]["abbr"])
             home = stats.team_season(CURRENT_SEASON, g["home"]["abbr"])
             write(f"games/{g['id']}", "game.html", g=g, active="home", away=away, home=home,
+                  away_cards=stats.vs_opponent_cards(away, CURRENT_SEASON, home["abbr"]),
+                  home_cards=stats.vs_opponent_cards(home, CURRENT_SEASON, away["abbr"]),
                   key_players=stats.key_players(away, home), **common)
     write("", "index.html", days=days, active="home", **common)
     write("teams", "teams.html", teams=team_list, active="teams", **common)

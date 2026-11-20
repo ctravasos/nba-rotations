@@ -226,3 +226,12 @@ th.to-col { color: #fff; font-weight: 700; }
 .chip:hover { background: #424A57; }
 .nav-logo { color: #fff; }
 .to-card-head .to-meta { color: rgba(255,255,255,.85); text-shadow: 0 1px 2px rgba(0,0,0,.5); }
+
+/* Cards: Player | PPG | 2%/3% | Season | L10 | vs OPP | Playoffs */
+.mini col.c-dir { width: 4%; }
+.mini col.c-ppg { width: 8%; }
+.mini col.c-split { width: 10%; }
+.mini col.c-rate { width: 12.5%; }
+.matchup-row .mini { min-width: 560px; }
+.mini td.text-rate { font-weight: 800; }
+.mini td.text-rate .frac { color: var(--text-secondary); }

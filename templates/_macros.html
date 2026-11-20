@@ -28,15 +28,16 @@
 </td>
 {%- endmacro %}
 
-{% macro slot_card(c, show_recent, label=None, color=None) -%}
+{% macro slot_card(c, show_recent, label=None, color=None, opp=None) -%}
 <div class="to-card {{ 'break-card' if c.is_break }}"{% if color %} style="--team-c: {{ color }}"{% endif %}>
   <div class="to-card-head">
     <span class="to-label">{{ label or c.label }}</span>
     <span class="to-meta">{% if c.median_clock %}median {{ c.median_clock }} · {% endif %}no sub {{ c.no_sub }}/{{ c.n }}</span>
   </div>
+  {% set ncols = 6 + (1 if show_recent else 0) + (1 if opp else 0) %}
   <table class="mini">
-    <colgroup><col class="c-dir"><col><col class="c-rate">{% if show_recent %}<col class="c-rate">{% endif %}<col class="c-rate"><col class="c-ppg"><col class="c-split"></colgroup>
-    <thead><tr><th></th><th>Player</th><th class="rate">Season</th>{% if show_recent %}<th class="rate">L{{ RECENT_GAMES }}</th>{% endif %}<th class="rate" title="Playoffs, play-in and NBA Cup games">Playoffs</th><th class="num">PPG</th><th class="num">2%/3%</th></tr></thead>
+    <colgroup><col class="c-dir"><col><col class="c-ppg"><col class="c-split"><col class="c-rate">{% if show_recent %}<col class="c-rate">{% endif %}{% if opp %}<col class="c-rate">{% endif %}<col class="c-rate"></colgroup>
+    <thead><tr><th></th><th>Player</th><th class="num">PPG</th><th class="num">2%/3%</th><th class="rate">Season</th>{% if show_recent %}<th class="rate">L{{ RECENT_GAMES }}</th>{% endif %}{% if opp %}<th class="rate" title="All games this season against {{ opp }}">vs {{ opp }}</th>{% endif %}<th class="rate" title="Playoffs, play-in and NBA Cup games">Playoffs</th></tr></thead>
     <tbody>
     {% set key = 'recent' if show_recent else 'rate' %}
     {% set ns = namespace(any=false) %}
@@ -46,16 +47,20 @@
       <tr>
         <td class="dir dir-{{ kind }}">{{ '▲' if kind == 'in' else '▼' }}</td>
         <td class="name"><a href="{{ base }}/players/{{ r.id }}/">{{ r.name }}</a></td>
-        <td class="rate" style="{{ heat(r.rate, kind) }}">{{ r.rate|pct }}<span class="frac">{{ r.n }}/{{ r.gp }}</span></td>
-        {% if show_recent %}<td class="rate" style="{{ heat(r.recent, kind) }}">{{ r.recent|pct }}</td>{% endif %}
-        {% if r.big is none %}<td class="rate muted-cell">–</td>
-        {% else %}<td class="rate" style="{{ heat(r.big, kind) }}">{{ (r.big * 100)|round|int }}%<span class="frac">{{ (r.big * r.big_gp)|round|int }}/{{ r.big_gp }}</span></td>{% endif %}
         <td class="num">{{ '%.1f'|format(r.ppg) }}</td>
         <td class="num">{{ r.two_three or '–' }}</td>
+        <td class="rate" style="{{ heat(r.rate, kind) }}">{{ r.rate|pct }}<span class="frac">{{ r.n }}/{{ r.gp }}</span></td>
+        {% if show_recent %}<td class="rate" style="{{ heat(r.recent, kind) }}">{{ r.recent|pct }}</td>{% endif %}
+        {% if opp %}
+          {% if r.vs is none %}<td class="rate muted-cell">–</td>
+          {% else %}<td class="rate text-rate" style="{{ text_heat(r.vs, kind) }}">{{ (r.vs * 100)|round|int }}%<span class="frac">{{ (r.vs * r.vs_gp)|round|int }}/{{ r.vs_gp }}</span></td>{% endif %}
+        {% endif %}
+        {% if r.big is none %}<td class="rate muted-cell">–</td>
+        {% else %}<td class="rate text-rate" style="{{ text_heat(r.big, kind) }}">{{ (r.big * 100)|round|int }}%<span class="frac">{{ (r.big * r.big_gp)|round|int }}/{{ r.big_gp }}</span></td>{% endif %}
       </tr>
     {% endfor %}
     {% if not ns.any %}
-      <tr><td colspan="7" class="muted">Nothing at {{ MIN_RATE_SHOWN|pct }}+ {{ 'season and L' ~ RECENT_GAMES if show_recent else 'this season' }}</td></tr>
+      <tr><td colspan="{{ ncols }}" class="muted">Nothing at {{ MIN_RATE_SHOWN|pct }}+ {{ 'season and L' ~ RECENT_GAMES if show_recent else 'this season' }}</td></tr>
     {% endif %}
     </tbody>
   </table>
