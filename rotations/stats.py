@@ -207,6 +207,9 @@ def team_season(season: int, abbr: str) -> dict:
             "median_clock": _fmt_clock(clocks.median()) if len(clocks) else None,
             "ins": top("ins"), "outs": top("outs"),
         })
+        # One list for the card: check-ins and check-outs together, tagged by direction
+        cards[-1]["rows"] = ([{**r, "kind": "in"} for r in cards[-1]["ins"]]
+                             + [{**r, "kind": "out"} for r in cards[-1]["outs"]])
 
     # Game log: changes at each slot for every game, newest first
     log = []
