@@ -37,7 +37,7 @@
   {% set ncols = 6 + (1 if show_recent else 0) + (1 if opp else 0) %}
   <table class="mini">
     <colgroup><col class="c-dir"><col><col class="c-ppg"><col class="c-split"><col class="c-rate">{% if show_recent %}<col class="c-rate">{% endif %}{% if opp %}<col class="c-rate">{% endif %}<col class="c-rate"></colgroup>
-    <thead><tr><th></th><th>Player</th><th class="num">PPG</th><th class="num">2%/3%</th><th class="rate">Season</th>{% if show_recent %}<th class="rate">L{{ RECENT_GAMES }}</th>{% endif %}{% if opp %}<th class="rate" title="All games this season against {{ opp }}">vs {{ opp }}</th>{% endif %}<th class="rate" title="Playoffs, play-in and NBA Cup games">Playoffs</th></tr></thead>
+    <thead><tr><th></th><th>Player</th><th class="num">PPG</th><th class="num">2%/3%</th><th class="rate">Season</th>{% if show_recent %}<th class="rate">L{{ RECENT_GAMES }}</th>{% endif %}{% if opp %}<th class="rate" title="All games this season against {{ opp }}">vs {{ opp }}</th>{% endif %}<th class="rate" title="Playoffs, play-in and NBA Cup games">Playoffs/Cup</th></tr></thead>
     <tbody>
     {% set key = 'recent' if show_recent else 'rate' %}
     {% set ns = namespace(any=false) %}
