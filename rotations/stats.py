@@ -188,6 +188,8 @@ def team_season(season: int, abbr: str) -> dict:
             counts = Counter(p for ids in rows[key] for p in ids)
             out = [{"id": pid, "name": display[pid], "n": c, "gp": int(info.gp[pid]),
                     "ppg": info.ppg[pid], "two_three": info.two_three[pid],
+                    # made 2s / 3s per game, for The Diff's combined split
+                    "m2": (info.fgm[pid] - info.fg3m[pid]) / info.gp[pid], "m3": info.fg3m[pid] / info.gp[pid],
                     "rate": season_rates[pid][(period, phase)],
                     "recent": recent_rates.get(pid, {}).get((period, phase), 0),
                     # None = no playoff / play-in / Cup games with this team yet
@@ -320,3 +322,25 @@ def vs_opponent_cards(t: dict, season: int, opp: str) -> list[dict]:
                 for r in c["rows"]]
         cards.append({**c, "rows": rows})
     return cards
+
+
+def the_diff(rows: list[dict]) -> dict | None:
+    """Bottom row of a slot card: the players coming in vs going out (only the listed rows).
+    ppg   = total PPG in - total PPG out
+    split = combined 2s share of made FGs in - out, in points, shown as "+8/−8"."""
+    if not rows:
+        return None
+    ins = [r for r in rows if r["kind"] == "in"]
+    outs = [r for r in rows if r["kind"] == "out"]
+
+    def twos_share(group):
+        made = sum(r["m2"] + r["m3"] for r in group)
+        return 100 * sum(r["m2"] for r in group) / made if made else None
+
+    s_in, s_out = twos_share(ins), twos_share(outs)
+    split = None
+    if s_in is not None and s_out is not None:
+        d = round(s_in - s_out)
+        fmt = lambda x: f"+{x}" if x > 0 else (f"−{-x}" if x < 0 else "0")
+        split = f"{fmt(d)}/{fmt(-d)}"
+    return {"ppg": sum(r["ppg"] for r in ins) - sum(r["ppg"] for r in outs), "split": split}

@@ -26,6 +26,7 @@ env.globals.update(
     MIN_MPG=MIN_MPG,
     season_label=season_label, short_name=stats.short_name,
     is_slot=lambda period, phase: (period, phase) in stats.SLOT_KEYS,
+    the_diff=stats.the_diff,
 )
 
 

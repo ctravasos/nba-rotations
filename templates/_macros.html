@@ -37,11 +37,12 @@
   {% set ncols = 6 + (1 if show_recent else 0) + (1 if opp else 0) %}
   <table class="mini">
     <colgroup><col class="c-dir"><col><col class="c-ppg"><col class="c-split"><col class="c-rate">{% if show_recent %}<col class="c-rate">{% endif %}{% if opp %}<col class="c-rate">{% endif %}<col class="c-rate"></colgroup>
-    <thead><tr><th></th><th>Player</th><th class="num">PPG</th><th class="num">2%/3%</th><th class="rate">Season</th>{% if show_recent %}<th class="rate">L{{ RECENT_GAMES }}</th>{% endif %}{% if opp %}<th class="rate" title="All games this season against {{ opp }}">vs {{ opp }}</th>{% endif %}<th class="rate" title="Playoffs, play-in and NBA Cup games">Playoffs/Cup</th></tr></thead>
+    <thead><tr><th></th><th>Player</th><th class="num">PPG</th><th class="num">2%/3%</th><th class="rate">Season</th>{% if show_recent %}<th class="rate">L{{ RECENT_GAMES }}</th>{% endif %}{% if opp %}<th class="rate" title="All games this season against {{ opp }}">vs {{ opp }}</th>{% endif %}<th class="rate" title="Playoffs, play-in and NBA Cup games">Playoffs/<wbr>Cup</th></tr></thead>
     <tbody>
     {% set key = 'recent' if show_recent else 'rate' %}
     {% set ns = namespace(any=false) %}
-    {% for r in c.rows|selectattr('rate', 'ge', MIN_RATE_SHOWN)|selectattr(key, 'ge', MIN_RATE_SHOWN)|sort(attribute='ppg', reverse=true) %}
+    {% set listed = c.rows|selectattr('rate', 'ge', MIN_RATE_SHOWN)|selectattr(key, 'ge', MIN_RATE_SHOWN)|sort(attribute='ppg', reverse=true)|list %}
+    {% for r in listed %}
       {% set kind = r.kind %}
       {% set ns.any = true %}
       <tr>
@@ -59,6 +60,16 @@
         {% else %}<td class="rate text-rate" style="{{ text_heat(r.big, kind) }}">{{ (r.big * 100)|round|int }}%<span class="frac">{{ (r.big * r.big_gp)|round|int }}/{{ r.big_gp }}</span></td>{% endif %}
       </tr>
     {% endfor %}
+    {% set d = the_diff(listed) %}
+    {% if d %}
+      <tr class="diff-row">
+        <td></td>
+        <td class="name">The Diff</td>
+        <td class="num" style="color: {{ 'var(--color-in-text)' if d.ppg > 0.05 else ('var(--color-out-text)' if d.ppg < -0.05 else 'inherit') }}">{{ '%+.1f'|format(d.ppg)|replace('-', '−') }}</td>
+        <td class="num">{{ d.split or '–' }}</td>
+        <td colspan="{{ ncols - 4 }}"></td>
+      </tr>
+    {% endif %}
     {% if not ns.any %}
       <tr><td colspan="{{ ncols }}" class="muted">Nothing at {{ MIN_RATE_SHOWN|pct }}+ {{ 'season and L' ~ RECENT_GAMES if show_recent else 'this season' }}</td></tr>
     {% endif %}

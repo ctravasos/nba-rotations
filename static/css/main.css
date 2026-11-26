@@ -235,3 +235,14 @@ th.to-col { color: #fff; font-weight: 700; }
 .matchup-row .mini { min-width: 560px; }
 .mini td.text-rate { font-weight: 800; }
 .mini td.text-rate .frac { color: var(--text-secondary); }
+
+/* The Diff: totals row at the bottom of each slot card */
+:root { --color-in-text: #5BD07A; --color-out-text: #F07070; }
+.mini tr.diff-row td { border-top: 2px solid var(--border); background: #262C35 !important; font-size: 14px; font-weight: 800; }
+.mini tr.diff-row td.name { text-transform: uppercase; letter-spacing: .04em; font-size: var(--fs-sm); color: #fff; }
+/* Headers wrap instead of clipping ("Playoffs/Cup"); keep The Diff's numbers apart */
+.mini th { white-space: normal; line-height: 1.15; vertical-align: bottom; }
+.mini col.c-ppg { width: 9%; }
+.mini col.c-split { width: 12%; }
+.mini td.num + td.num { padding-left: 12px; }
+.mini tr.diff-row td.num { white-space: nowrap; }
