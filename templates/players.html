@@ -18,7 +18,7 @@
   </div>
   <label class="muted"><input type="checkbox" data-min-gp="players" checked> 5+ GP</label>
 </div>
-<p class="hint">Click a column to sort. 2%/3% = share of made field goals that are 2s / 3s (sorts by the 2s share). % = share of the player's games where they checked in (or out) at that timeout or quarter break.</p>
+<p class="hint">Click a column to sort. 2PM/3PM = made 2s / made 3s per game (sorts by made 2s). % = share of the player's games where they checked in (or out) at that timeout or quarter break.</p>
 
 {% for kind in ('ins', 'outs') %}
 <div class="table-wrap" data-panel="pdir" data-name="{{ kind[:-1] }}" {{ 'hidden' if kind == 'outs' }}>
@@ -31,7 +31,7 @@
       <th data-sort="num">GS</th>
       <th data-sort="num">MPG</th>
       <th data-sort="num">PPG</th>
-      <th data-sort="num" title="Share of made field goals that are 2s / 3s">2%/3%</th>
+      <th data-sort="num" title="Made 2s / made 3s per game">2PM/3PM</th>
       {% for s in SLOTS %}<th data-sort="num" title="{{ s.label }}" class="{{ 'q-start' if loop.first or SLOTS[loop.index0 - 1].period != s.period }}"><span class="th-top">{{ s.top }}</span>{{ s.bottom }}</th>{% endfor %}
     </tr>
   </thead>

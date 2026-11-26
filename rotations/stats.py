@@ -52,12 +52,11 @@ SLOT_KEYS = [(s["period"], s["phase"]) for s in SLOTS]
 ABBR = {"GS": "GSW", "NY": "NYK", "SA": "SAS", "NO": "NOP", "UTAH": "UTA", "WSH": "WAS"}
 
 
-def two_three(fgm: float, fg3m: float) -> str | None:
-    """Share of made field goals that are 2s vs 3s, e.g. "65/35"."""
-    if not fgm:
+def two_three(fgm: float, fg3m: float, gp: int) -> str | None:
+    """Made 2s / made 3s per game, e.g. "4.7/1.9"."""
+    if not gp:
         return None
-    threes = round(100 * fg3m / fgm)
-    return f"{100 - threes}/{threes}"
+    return f"{(fgm - fg3m) / gp:.1f}/{fg3m / gp:.1f}"
 
 
 def short_name(name: str) -> str:
@@ -153,7 +152,7 @@ def team_season(season: int, abbr: str) -> dict:
         name=("name", "first"), pos=("pos", "first"), headshot=("headshot", "first"),
         gp=("game_id", "nunique"), gs=("starter", "sum"), mpg=("minutes", "mean"),
         ppg=("points", "mean"), fgm=("fgm", "sum"), fg3m=("fg3m", "sum"))
-    info["two_three"] = [two_three(a, b) for a, b in zip(info.fgm, info.fg3m)]
+    info["two_three"] = [two_three(a, b, g) for a, b, g in zip(info.fgm, info.fg3m, info.gp)]
     info["gp_recent"] = pd.Series({pid: len(g) for pid, g in last_played.items()}).reindex(info.index)
     info = info.sort_values(["gs", "mpg"], ascending=False)
 
@@ -188,7 +187,7 @@ def team_season(season: int, abbr: str) -> dict:
             counts = Counter(p for ids in rows[key] for p in ids)
             out = [{"id": pid, "name": display[pid], "n": c, "gp": int(info.gp[pid]),
                     "ppg": info.ppg[pid], "two_three": info.two_three[pid],
-                    # made 2s / 3s per game, for The Diff's combined split
+                    # made 2s / 3s per game, summed by The Diff
                     "m2": (info.fgm[pid] - info.fg3m[pid]) / info.gp[pid], "m3": info.fg3m[pid] / info.gp[pid],
                     "rate": season_rates[pid][(period, phase)],
                     "recent": recent_rates.get(pid, {}).get((period, phase), 0),
@@ -262,7 +261,7 @@ def all_players(season: int) -> list[dict]:
         for pid, r in info.iterrows():
             rows.append({"id": pid, "name": r["name"], "team": abbr, "gp": int(gp[pid]),
                          "gs": int(r.gs), "mpg": r.mpg, "ppg": r.ppg,
-                         "two_three": two_three(r.fgm, r.fg3m),
+                         "two_three": two_three(r.fgm, r.fg3m, gp[pid]),
                          "ins": [ins.get(pid, {}).get(c, 0) for c in SLOT_KEYS],
                          "outs": [outs.get(pid, {}).get(c, 0) for c in SLOT_KEYS]})
     return sorted(rows, key=lambda r: -r["mpg"] * r["gp"])
@@ -325,22 +324,13 @@ def vs_opponent_cards(t: dict, season: int, opp: str) -> list[dict]:
 
 
 def the_diff(rows: list[dict]) -> dict | None:
-    """Bottom row of a slot card: the players coming in vs going out (only the listed rows).
+    """Subheader of a slot card: the listed players coming in vs going out, per game.
     ppg   = total PPG in - total PPG out
-    split = combined 2s share of made FGs in - out, in points, shown as "+8/−8"."""
+    split = made 2s in - out / made 3s in - out, e.g. "−5.3/−1.4"."""
     if not rows:
         return None
-    ins = [r for r in rows if r["kind"] == "in"]
-    outs = [r for r in rows if r["kind"] == "out"]
-
-    def twos_share(group):
-        made = sum(r["m2"] + r["m3"] for r in group)
-        return 100 * sum(r["m2"] for r in group) / made if made else None
-
-    s_in, s_out = twos_share(ins), twos_share(outs)
-    split = None
-    if s_in is not None and s_out is not None:
-        d = round(s_in - s_out)
-        fmt = lambda x: f"+{x}" if x > 0 else (f"−{-x}" if x < 0 else "0")
-        split = f"{fmt(d)}/{fmt(-d)}"
-    return {"ppg": sum(r["ppg"] for r in ins) - sum(r["ppg"] for r in outs), "split": split}
+    # Sum the rounded values shown on the card so the rows visibly add up to the total
+    net = lambda field: (sum(round(r[field], 1) for r in rows if r["kind"] == "in")
+                         - sum(round(r[field], 1) for r in rows if r["kind"] == "out"))
+    fmt = lambda x: "0.0" if round(x, 1) == 0 else f"{x:+.1f}".replace("-", "−")
+    return {"ppg": net("ppg"), "split": f"{fmt(net('m2'))}/{fmt(net('m3'))}"}
