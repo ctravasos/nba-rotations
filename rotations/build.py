@@ -52,6 +52,18 @@ def text_heat(rate: float, kind: str) -> str:
 env.globals["text_heat"] = text_heat
 
 
+def sign_color(x: float) -> str:
+    """Green for a positive Diff, red for negative, plain for (rounded) zero."""
+    if round(x, 1) > 0:
+        return "color: var(--color-in-text)"
+    if round(x, 1) < 0:
+        return "color: var(--color-out-text)"
+    return ""
+
+
+env.globals["sign_color"] = sign_color
+
+
 def write(path: str, template: str, **ctx) -> None:
     out = SITE / path / "index.html"
     out.parent.mkdir(parents=True, exist_ok=True)

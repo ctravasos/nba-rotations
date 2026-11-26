@@ -333,4 +333,5 @@ def the_diff(rows: list[dict]) -> dict | None:
     net = lambda field: (sum(round(r[field], 1) for r in rows if r["kind"] == "in")
                          - sum(round(r[field], 1) for r in rows if r["kind"] == "out"))
     fmt = lambda x: "0.0" if round(x, 1) == 0 else f"{x:+.1f}".replace("-", "−")
-    return {"ppg": net("ppg"), "split": f"{fmt(net('m2'))}/{fmt(net('m3'))}"}
+    m2, m3 = net("m2"), net("m3")
+    return {"ppg": net("ppg"), "m2": m2, "m3": m3, "m2_text": fmt(m2), "m3_text": fmt(m3)}

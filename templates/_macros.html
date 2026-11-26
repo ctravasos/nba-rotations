@@ -65,8 +65,8 @@
       <tr class="diff-row">
         <td></td>
         <td class="name">The Diff</td>
-        <td class="num" style="color: {{ 'var(--color-in-text)' if d.ppg > 0.05 else ('var(--color-out-text)' if d.ppg < -0.05 else 'inherit') }}">{{ '%+.1f'|format(d.ppg)|replace('-', '−') }}</td>
-        <td class="num">{{ d.split or '–' }}</td>
+        <td class="num" style="{{ sign_color(d.ppg) }}">{{ '%+.1f'|format(d.ppg)|replace('-', '−') }}</td>
+        <td class="num"><span style="{{ sign_color(d.m2) }}">{{ d.m2_text }}</span>/<span style="{{ sign_color(d.m3) }}">{{ d.m3_text }}</span></td>
         <td colspan="{{ ncols - 4 }}"></td>
       </tr>
     {% endif %}
