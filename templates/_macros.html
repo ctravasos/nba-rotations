@@ -42,6 +42,16 @@
     {% set key = 'recent' if show_recent else 'rate' %}
     {% set ns = namespace(any=false) %}
     {% set listed = c.rows|selectattr('rate', 'ge', MIN_RATE_SHOWN)|selectattr(key, 'ge', MIN_RATE_SHOWN)|sort(attribute='ppg', reverse=true)|list %}
+    {% set d = the_diff(listed) %}
+    {% if d %}
+      <tr class="diff-row">
+        <td></td>
+        <td class="name">The Diff</td>
+        <td class="num" style="color: {{ 'var(--color-in-text)' if d.ppg > 0.05 else ('var(--color-out-text)' if d.ppg < -0.05 else 'inherit') }}">{{ '%+.1f'|format(d.ppg)|replace('-', '−') }}</td>
+        <td class="num">{{ d.split or '–' }}</td>
+        <td colspan="{{ ncols - 4 }}"></td>
+      </tr>
+    {% endif %}
     {% for r in listed %}
       {% set kind = r.kind %}
       {% set ns.any = true %}
@@ -60,16 +70,6 @@
         {% else %}<td class="rate text-rate" style="{{ text_heat(r.big, kind) }}">{{ (r.big * 100)|round|int }}%<span class="frac">{{ (r.big * r.big_gp)|round|int }}/{{ r.big_gp }}</span></td>{% endif %}
       </tr>
     {% endfor %}
-    {% set d = the_diff(listed) %}
-    {% if d %}
-      <tr class="diff-row">
-        <td></td>
-        <td class="name">The Diff</td>
-        <td class="num" style="color: {{ 'var(--color-in-text)' if d.ppg > 0.05 else ('var(--color-out-text)' if d.ppg < -0.05 else 'inherit') }}">{{ '%+.1f'|format(d.ppg)|replace('-', '−') }}</td>
-        <td class="num">{{ d.split or '–' }}</td>
-        <td colspan="{{ ncols - 4 }}"></td>
-      </tr>
-    {% endif %}
     {% if not ns.any %}
       <tr><td colspan="{{ ncols }}" class="muted">Nothing at {{ MIN_RATE_SHOWN|pct }}+ {{ 'season and L' ~ RECENT_GAMES if show_recent else 'this season' }}</td></tr>
     {% endif %}
